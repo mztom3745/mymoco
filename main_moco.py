@@ -233,9 +233,11 @@ def main_worker(gpu, ngpus_per_node, args):
     if args.distributed:
         if args.dist_url == "env://" and args.rank == -1:
             args.rank = int(os.environ["RANK"])
+            # 每个进程在启动时都会从环境变量中获取自己的排名
         if args.multiprocessing_distributed:
             # For multiprocessing distributed training, rank needs to be the
             # global rank among all the processes
+            # 转换为全局排名
             args.rank = args.rank * ngpus_per_node + gpu
         dist.init_process_group(
             backend=args.dist_backend,
@@ -291,7 +293,7 @@ def main_worker(gpu, ngpus_per_node, args):
     optimizer = torch.optim.SGD(
         model.parameters(),
         args.lr,
-        momentum=args.momentum,
+        momentum=args.momentum, # 非moco动量
         weight_decay=args.weight_decay,
     )
 
@@ -322,7 +324,7 @@ def main_worker(gpu, ngpus_per_node, args):
     traindir = os.path.join(args.data, "train")
     normalize = transforms.Normalize(
         mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-    )
+    )# 用于对图像进行标准化处理，具体来说，就是将图像的像素值缩放到一个固定的范围
     if args.aug_plus:
         # MoCo v2's aug: similar to SimCLR https://arxiv.org/abs/2002.05709
         augmentation = [
@@ -348,7 +350,7 @@ def main_worker(gpu, ngpus_per_node, args):
         ]
 
     train_dataset = datasets.ImageFolder(
-        traindir, moco.loader.TwoCropsTransform(transforms.Compose(augmentation))
+        traindir, moco.loader.TwoCropsTransform(transforms.Compose(augmentation))# 文件夹路径和指定数据增强方法
     )
 
     if args.distributed:
@@ -359,10 +361,10 @@ def main_worker(gpu, ngpus_per_node, args):
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
         batch_size=args.batch_size,
-        shuffle=(train_sampler is None),
+        shuffle=(train_sampler is None),# 即false，因为有train_sampler
         num_workers=args.workers,
-        pin_memory=True,
-        sampler=train_sampler,
+        pin_memory=True, # 数据加载器将把数据缓存在CPU的内存中，而不是使用系统内存
+        sampler=train_sampler,# train_sampler已经实现了自己的采样策略
         drop_last=True,
     )
 
@@ -375,7 +377,7 @@ def main_worker(gpu, ngpus_per_node, args):
         train(train_loader, model, criterion, optimizer, epoch, args)
 
         if not args.multiprocessing_distributed or (
-            args.multiprocessing_distributed and args.rank % ngpus_per_node == 0
+            args.multiprocessing_distributed and args.rank % ngpus_per_node == 0 # ngpus_per_node为gpu总数，即一轮训练完成后
         ):
             save_checkpoint(
                 {
@@ -405,7 +407,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
     model.train()
 
     end = time.time()
-    for i, (images, _) in enumerate(train_loader):
+    for i, (images, _) in enumerate(train_loader): # 忽略target，同时获取索引和元素
         # measure data loading time
         data_time.update(time.time() - end)
 
@@ -481,16 +483,16 @@ class ProgressMeter:
 
     def _get_batch_fmtstr(self, num_batches):
         num_digits = len(str(num_batches // 1))
-        fmt = "{:" + str(num_digits) + "d}"
+        fmt = "{:" + str(num_digits) + "d}"# 字符串格式（即batches的格式
         return "[" + fmt + "/" + fmt.format(num_batches) + "]"
 
 
 def adjust_learning_rate(optimizer, epoch, args):
     """Decay the learning rate based on schedule"""
     lr = args.lr
-    if args.cos:  # cosine lr schedule
+    if args.cos:  # cosine lr schedule 余弦退火调度策略
         lr *= 0.5 * (1.0 + math.cos(math.pi * epoch / args.epochs))
-    else:  # stepwise lr schedule
+    else:  # stepwise lr schedule 阶梯状调度策略
         for milestone in args.schedule:
             lr *= 0.1 if epoch >= milestone else 1.0
     for param_group in optimizer.param_groups:

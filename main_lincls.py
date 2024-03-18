@@ -256,7 +256,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
             args.start_epoch = 0
             msg = model.load_state_dict(state_dict, strict=False)
-            assert set(msg.missing_keys) == {"fc.weight", "fc.bias"}
+            assert set(msg.missing_keys) == {"fc.weight", "fc.bias"}# 不加载最后的fc层
 
             print("=> loaded pre-trained model '{}'".format(args.pretrained))
         else:
@@ -454,8 +454,8 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         # measure accuracy and record loss
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
         losses.update(loss.item(), images.size(0))
-        top1.update(acc1[0], images.size(0))
-        top5.update(acc5[0], images.size(0))
+        
+        
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -510,7 +510,6 @@ def validate(val_loader, model, criterion, args):
         print(
             " * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}".format(top1=top1, top5=top5)
         )
-
     return top1.avg
 
 

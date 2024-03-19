@@ -119,10 +119,11 @@ parser.add_argument(
     help="path to latest checkpoint (default: none)",
 )
 parser.add_argument(
-    "--world-size",
+    "--world-size",    
     default=-1,
     type=int,
     help="number of nodes for distributed training",
+    # 代表了参与分布式训练的总进程数（一般一个GPU一个进程）
 )
 parser.add_argument(
     "--rank", default=-1, type=int, help="node rank for distributed training"
@@ -135,7 +136,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--dist-backend", default="nccl", type=str, help="distributed backend"
-)
+)# 允许用户在命令行中指定一个分布式训练的后端
 parser.add_argument(
     "--seed", default=None, type=int, help="seed for initializing training. "
 )
@@ -199,21 +200,22 @@ def main():
         )
 
     if args.dist_url == "env://" and args.world_size == -1:
-        args.world_size = int(os.environ["WORLD_SIZE"])
+        args.world_size = int(os.environ["WORLD_SIZE"])# 参与分布式训练的总进程数
 
     args.distributed = args.world_size > 1 or args.multiprocessing_distributed
 
-    ngpus_per_node = torch.cuda.device_count()
+    ngpus_per_node = torch.cuda.device_count()# 一个机器上有多少的GPU
     if args.multiprocessing_distributed:
         # Since we have ngpus_per_node processes per node, the total world_size
         # needs to be adjusted accordingly
-        args.world_size = ngpus_per_node * args.world_size
+        args.world_size = ngpus_per_node * args.world_size# 
+        # 总共的进程/GPU=参与训练的节点数乘以每个节点上的进程/GPU数
         # Use torch.multiprocessing.spawn to launch distributed processes: the
         # main_worker process function
         mp.spawn(main_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, args))
     else:
         # Simply call main_worker function
-        main_worker(args.gpu, ngpus_per_node, args)
+        main_worker(args.gpu, ngpus_per_node, args)# 传入ngpus_per_node作为args.gpu
 
 
 def main_worker(gpu, ngpus_per_node, args):
@@ -224,7 +226,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
         def print_pass(*args):
             pass
-
+        # 仅让主进程打印信息
         builtins.print = print_pass
 
     if args.gpu is not None:
@@ -237,6 +239,8 @@ def main_worker(gpu, ngpus_per_node, args):
             # For multiprocessing distributed training, rank needs to be the
             # global rank among all the processes
             args.rank = args.rank * ngpus_per_node + gpu
+        # 来初始化分布式训练的过程组。
+        # 这个过程组会负责管理进程之间的通信，确保数据同步和梯度汇总等操作的正确执行。
         dist.init_process_group(
             backend=args.dist_backend,
             init_method=args.dist_url,
@@ -246,7 +250,7 @@ def main_worker(gpu, ngpus_per_node, args):
     # create model
     print("=> creating model '{}'".format(args.arch))
     model = moco.builder.MoCo(
-        models.__dict__[args.arch],
+        models.__dict__[args.arch],# 创建resnet50
         args.moco_dim,
         args.moco_k,
         args.moco_m,
@@ -289,10 +293,10 @@ def main_worker(gpu, ngpus_per_node, args):
     criterion = nn.CrossEntropyLoss().cuda(args.gpu)
 
     optimizer = torch.optim.SGD(
-        model.parameters(),
-        args.lr,
-        momentum=args.momentum,
-        weight_decay=args.weight_decay,
+        model.parameters(),#模型参数
+        args.lr,#学习率
+        momentum=args.momentum,#动量
+        weight_decay=args.weight_decay,#学习率减少方式
     )
 
     # optionally resume from a checkpoint
@@ -316,7 +320,9 @@ def main_worker(gpu, ngpus_per_node, args):
         else:
             print("=> no checkpoint found at '{}'".format(args.resume))
 
-    cudnn.benchmark = True
+    cudnn.benchmark = True 
+    # PyTorch使用CUDA深度神经网络库（cuDNN）的基准测试功能。
+    # 当这个设置为True时，PyTorch会自动选择最优的算法和权重布局（layout）来加速前向传播和反向传播
 
     # Data loading code
     traindir = os.path.join(args.data, "train")
@@ -353,6 +359,8 @@ def main_worker(gpu, ngpus_per_node, args):
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
+        # 创建一个DistributedSampler实例，它会对train_dataset进行分布式抽样。
+        # 这个sampler会根据当前进程的ID来抽样数据，确保每个进程可以独立地处理一部分训练数据。
     else:
         train_sampler = None
 
@@ -509,7 +517,7 @@ def accuracy(output, target, topk=(1,)):
 
         res = []
         for k in topk:
-            correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
+            correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 

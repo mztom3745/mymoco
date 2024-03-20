@@ -105,7 +105,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "-p",
-    "--print-freq",
+    "--print-freq",#每十个batchsize打印一次
     default=10,
     type=int,
     metavar="N",
@@ -438,7 +438,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         end = time.time()
 
         if i % args.print_freq == 0:
-            progress.display(i)
+            progress.display(i) #打印信息
 
 
 def save_checkpoint(state, is_best, filename="checkpoint.pth.tar"):
@@ -461,7 +461,7 @@ class AverageMeter:
         self.sum = 0
         self.count = 0
 
-    def update(self, val, n=1):
+    def update(self, val, n=1):# n为维度
         self.val = val
         self.sum += val * n
         self.count += n
@@ -486,7 +486,7 @@ class ProgressMeter:
     def _get_batch_fmtstr(self, num_batches):
         num_digits = len(str(num_batches // 1))
         fmt = "{:" + str(num_digits) + "d}"# 字符串格式（即batches的格式
-        return "[" + fmt + "/" + fmt.format(num_batches) + "]"
+        return "[" + fmt + "/" + fmt.format(num_batches) + "]"# 打印当前[批次/单epoch的总批次]
 
 
 def adjust_learning_rate(optimizer, epoch, args):
@@ -514,6 +514,7 @@ def accuracy(output, target, topk=(1,)):# Nx(1+K)
         res = []
         for k in topk:
             correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
+            # 将view(-1)改为reshape(-1)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 

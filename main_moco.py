@@ -371,6 +371,8 @@ def main_worker(gpu, ngpus_per_node, args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
+            # 为了让每一个epoch的采样顺序不一样，在每次epoch循环的开始，
+            # 需要调用set_epoch()函数来更新 self.epoch
         adjust_learning_rate(optimizer, epoch, args)
 
         # train for one epoch
@@ -407,7 +409,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
     model.train()
 
     end = time.time()
-    for i, (images, _) in enumerate(train_loader): # 忽略target，同时获取索引和元素
+    for i, (images, _) in enumerate(train_loader): # 忽略数据集中的target，同时获取索引和元素
         # measure data loading time
         data_time.update(time.time() - end)
 
@@ -416,7 +418,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
             images[1] = images[1].cuda(args.gpu, non_blocking=True)
 
         # compute output
-        output, target = model(im_q=images[0], im_k=images[1])
+        output, target = model(im_q=images[0], im_k=images[1])# Nx(1+K)
         loss = criterion(output, target)
 
         # acc1/acc5 are (K+1)-way contrast classifier accuracy
@@ -499,7 +501,7 @@ def adjust_learning_rate(optimizer, epoch, args):
         param_group["lr"] = lr
 
 
-def accuracy(output, target, topk=(1,)):
+def accuracy(output, target, topk=(1,)):# Nx(1+K)
     """Computes the accuracy over the k top predictions for the specified values of k"""
     with torch.no_grad():
         maxk = max(topk)

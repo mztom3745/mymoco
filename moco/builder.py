@@ -31,7 +31,7 @@ class MoCo(nn.Module):
         self.encoder_q = base_encoder(num_classes=dim)
         self.encoder_k = base_encoder(num_classes=dim)
 
-        if mlp:  # hack: brute-force replacement
+        if mlp:  # hack: brute-force replacement 添加了一个线性层
             dim_mlp = self.encoder_q.fc.weight.shape[1]
             self.encoder_q.fc = nn.Sequential(
                 nn.Linear(dim_mlp, dim_mlp), nn.ReLU(), self.encoder_q.fc
@@ -47,8 +47,8 @@ class MoCo(nn.Module):
             param_k.requires_grad = False  # not update by gradient
 
         # create the queue
-        self.register_buffer("queue", torch.randn(dim, K))
-        self.queue = nn.functional.normalize(self.queue, dim=0)
+        self.register_buffer("queue", torch.randn(dim, K))#　128x65536
+        self.queue = nn.functional.normalize(self.queue, dim=0)# 每个128维的负样本的L2范数都是1
 
         self.register_buffer("queue_ptr", torch.zeros(1, dtype=torch.long))
 
@@ -65,15 +65,15 @@ class MoCo(nn.Module):
     @torch.no_grad()
     def _dequeue_and_enqueue(self, keys):
         # gather keys before updating queue
-        keys = concat_all_gather(keys)
+        keys = concat_all_gather(keys)# 收集所有GPU上的key
 
-        batch_size = keys.shape[0]
+        batch_size = keys.shape[0]# 总的batch_size,256
 
         ptr = int(self.queue_ptr)
-        assert self.K % batch_size == 0  # for simplicity
+        assert self.K % batch_size == 0  # for simplicity 65536%256 
 
         # replace the keys at ptr (dequeue and enqueue)
-        self.queue[:, ptr : ptr + batch_size] = keys.T
+        self.queue[:, ptr : ptr + batch_size] = keys.T # 必然是整块替换，不会头尾两截
         ptr = (ptr + batch_size) % self.K  # move pointer
 
         self.queue_ptr[0] = ptr
@@ -102,9 +102,9 @@ class MoCo(nn.Module):
 
         # shuffled index for this gpu
         gpu_idx = torch.distributed.get_rank()
-        idx_this = idx_shuffle.view(num_gpus, -1)[gpu_idx]
+        idx_this = idx_shuffle.view(num_gpus, -1)[gpu_idx]# 获取当前GPU的索引，并从 idx_shuffle 中选择与当前GPU对应的索引。
 
-        return x_gather[idx_this], idx_unshuffle
+        return x_gather[idx_this], idx_unshuffle# 返回的应该是当前gpu分到的数据
 
     @torch.no_grad()
     def _batch_unshuffle_ddp(self, x, idx_unshuffle):
@@ -136,7 +136,7 @@ class MoCo(nn.Module):
 
         # compute query features
         q = self.encoder_q(im_q)  # queries: NxC
-        q = nn.functional.normalize(q, dim=1)
+        q = nn.functional.normalize(q, dim=1) #沿着张量的第一个维度（通常是特征维度的方向）进行归一化
 
         # compute key features
         with torch.no_grad():  # no gradient to keys
@@ -154,9 +154,9 @@ class MoCo(nn.Module):
         # compute logits
         # Einstein sum is more intuitive
         # positive logits: Nx1
-        l_pos = torch.einsum("nc,nc->n", [q, k]).unsqueeze(-1)
+        l_pos = torch.einsum("nc,nc->n", [q, k]).unsqueeze(-1)#做点积，得到n*1
         # negative logits: NxK
-        l_neg = torch.einsum("nc,ck->nk", [q, self.queue.clone().detach()])
+        l_neg = torch.einsum("nc,ck->nk", [q, self.queue.clone().detach()])#做矩阵乘，得到n*k
 
         # logits: Nx(1+K)
         logits = torch.cat([l_pos, l_neg], dim=1)
@@ -165,10 +165,10 @@ class MoCo(nn.Module):
         logits /= self.T
 
         # labels: positive key indicators
-        labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda()
+        labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda()# 将全0标签移动到GPU上
 
         # dequeue and enqueue
-        self._dequeue_and_enqueue(k)
+        self._dequeue_and_enqueue(k)# k is NxC(batch_size x Dim)
 
         return logits, labels
 
@@ -185,5 +185,6 @@ def concat_all_gather(tensor):
     ]
     torch.distributed.all_gather(tensors_gather, tensor, async_op=False)
 
+    # 将tensors_gather列表中的所有张量沿着维度0连接起来，形成一个单一的张量output
     output = torch.cat(tensors_gather, dim=0)
     return output

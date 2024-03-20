@@ -379,7 +379,8 @@ def main_worker(gpu, ngpus_per_node, args):
         train(train_loader, model, criterion, optimizer, epoch, args)
 
         if not args.multiprocessing_distributed or (
-            args.multiprocessing_distributed and args.rank % ngpus_per_node == 0 # ngpus_per_node为gpu总数，即一轮训练完成后
+            args.multiprocessing_distributed and args.rank % ngpus_per_node == 0 
+            # ngpus_per_node为gpu总数，即一轮训练完成后
         ):
             save_checkpoint(
                 {

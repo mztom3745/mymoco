@@ -450,13 +450,13 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         
         if args.gpu is not None:
             images = images.cuda(args.gpu, non_blocking=True)
-            print("*t**images'shape:",images.size())#added
+            #print("*t**images'shape:",images.size())#added
         target = target.cuda(args.gpu, non_blocking=True)
-        print("target",target.size())
+        #print("target",target.size())
         # compute output
         output = model(images)
-        print("output",output.size())
-        print("***")
+        #print("output",output.size())
+        #print("***")
         loss = criterion(output, target)
 
         # measure accuracy and record loss
@@ -495,17 +495,17 @@ def validate(val_loader, model, criterion, args):
         for i, (images, target) in enumerate(val_loader):
             if args.gpu is not None:
                 images = images.cuda(args.gpu, non_blocking=True)
-                print("**v*image",images.size())
+                #print("**v*image",images.size())
             target = target.cuda(args.gpu, non_blocking=True)
-            print("target:",target)
+            #print("target:",target)
                 
             # compute output
             output = model(images)
             _, pred = output.topk(5, 1, True, True)
-            print("pred5 is",pred)
-            print("output:",output.size())
+            #print("pred5 is",pred)
+            #print("output:",output.size())
             loss = criterion(output, target)
-            print("***")
+            #print("***")
             
             # measure accuracy and record loss
             acc1, acc5 = accuracy(output, target, topk=(1, 5))

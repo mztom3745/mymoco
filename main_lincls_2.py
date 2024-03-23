@@ -226,8 +226,8 @@ def main_worker(gpu, ngpus_per_node, args):
         )
     # create model
     print("=> creating model '{}'".format(args.arch))
-    model = models.__dict__[args.arch]()
-
+    model = models.__dict__[args.arch]()#只是创建了一个resnet50
+        
     # freeze all layers but the last fc
     for name, param in model.named_parameters():
         if name not in ["fc.weight", "fc.bias"]:
@@ -261,7 +261,9 @@ def main_worker(gpu, ngpus_per_node, args):
             print("=> loaded pre-trained model '{}'".format(args.pretrained))
         else:
             print("=> no checkpoint found at '{}'".format(args.pretrained))
-
+    
+    print(model)#打印这个resnet50
+    
     if args.distributed:
         # For multiprocessing distributed, DistributedDataParallel constructor
         # should always set the single device scope, otherwise,

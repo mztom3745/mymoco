@@ -260,6 +260,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
             args.start_epoch = 0
             msg = model.load_state_dict(state_dict, strict=False)
+            print(set(msg.missing_keys))
             assert set(msg.missing_keys) == {"fc.weight", "fc.bias"}# 不加载最后的fc层
 
             print("=> loaded pre-trained model '{}'".format(args.pretrained))

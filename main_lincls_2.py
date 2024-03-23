@@ -261,8 +261,7 @@ def main_worker(gpu, ngpus_per_node, args):
             print("=> loaded pre-trained model '{}'".format(args.pretrained))
         else:
             print("=> no checkpoint found at '{}'".format(args.pretrained))
-    
-    print(model)#打印这个resnet50
+    print(model) #打印这个resnet50
     
     if args.distributed:
         # For multiprocessing distributed, DistributedDataParallel constructor
@@ -439,18 +438,21 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
     no gradient), which are part of the model parameters too.
     """
     model.eval()
-
+    
     end = time.time()
     for i, (images, target) in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
-
+        
         if args.gpu is not None:
             images = images.cuda(args.gpu, non_blocking=True)
+            print("*t**images'shape:".format(torch.size(images)))#added
         target = target.cuda(args.gpu, non_blocking=True)
-
+        print("target",target)
         # compute output
         output = model(images)
+        print("output",output)
+        print("***")
         loss = criterion(output, target)
 
         # measure accuracy and record loss
@@ -489,12 +491,15 @@ def validate(val_loader, model, criterion, args):
         for i, (images, target) in enumerate(val_loader):
             if args.gpu is not None:
                 images = images.cuda(args.gpu, non_blocking=True)
+                print("**v*image",torch.size(images))
             target = target.cuda(args.gpu, non_blocking=True)
-
+            print("target:"target)
+                
             # compute output
             output = model(images)
             loss = criterion(output, target)
-
+            print("output:",output)
+            
             # measure accuracy and record loss
             acc1, acc5 = accuracy(output, target, topk=(1, 5))
             losses.update(loss.item(), images.size(0))

@@ -446,12 +446,12 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         
         if args.gpu is not None:
             images = images.cuda(args.gpu, non_blocking=True)
-            print("*t**images'shape:",images.shape())#added
+            print("*t**images'shape:",images.size())#added
         target = target.cuda(args.gpu, non_blocking=True)
-        print("target",target.shape())
+        print("target",target.size())
         # compute output
         output = model(images)
-        print("output",output.shape())
+        print("output",output.size())
         print("***")
         loss = criterion(output, target)
 
@@ -491,14 +491,14 @@ def validate(val_loader, model, criterion, args):
         for i, (images, target) in enumerate(val_loader):
             if args.gpu is not None:
                 images = images.cuda(args.gpu, non_blocking=True)
-                print("**v*image",images.shape())
+                print("**v*image",images.size())
             target = target.cuda(args.gpu, non_blocking=True)
-            print("target:",target.shape())
+            print("target:",target.size())
                 
             # compute output
             output = model(images)
             loss = criterion(output, target)
-            print("output:",output.shape())
+            print("output:",output.size())
             print("***")
             
             # measure accuracy and record loss

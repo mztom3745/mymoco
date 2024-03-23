@@ -396,7 +396,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
         # evaluate on validation set
         acc1 = validate(val_loader, model, criterion, args)
-
+        
         # remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1
         best_acc1 = max(acc1, best_acc1)
@@ -493,12 +493,14 @@ def validate(val_loader, model, criterion, args):
                 images = images.cuda(args.gpu, non_blocking=True)
                 print("**v*image",images.size())
             target = target.cuda(args.gpu, non_blocking=True)
-            print("target:",target.size())
+            print("target:",target)
                 
             # compute output
             output = model(images)
-            loss = criterion(output, target)
+            _, pred = output.topk(5, 1, True, True)
+            print("pred5 is",pred)
             print("output:",output.size())
+            loss = criterion(output, target)
             print("***")
             
             # measure accuracy and record loss

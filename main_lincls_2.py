@@ -493,12 +493,13 @@ def validate(val_loader, model, criterion, args):
                 images = images.cuda(args.gpu, non_blocking=True)
                 print("**v*image",torch.size(images))
             target = target.cuda(args.gpu, non_blocking=True)
-            print("target:"target)
+            print("target:",target)
                 
             # compute output
             output = model(images)
             loss = criterion(output, target)
             print("output:",output)
+            print("***")
             
             # measure accuracy and record loss
             acc1, acc5 = accuracy(output, target, topk=(1, 5))

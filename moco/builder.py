@@ -154,9 +154,9 @@ class MoCo(nn.Module):
         # compute logits
         # Einstein sum is more intuitive
         # positive logits: Nx1
-        l_pos = torch.einsum("nc,nc->n", [q, k]).unsqueeze(-1)#做点积，得到n*1
+        l_pos = torch.einsum("nc,nc->n", [q, k]).unsqueeze(-1)#做点积，得到n*1，表明
         # negative logits: NxK
-        l_neg = torch.einsum("nc,ck->nk", [q, self.queue.clone().detach()])#做矩阵乘，得到n*k
+        l_neg = torch.einsum("nc,ck->nk", [q, self.queue.clone().detach()]) #做矩阵乘，得到n*k
 
         # logits: Nx(1+K)
         logits = torch.cat([l_pos, l_neg], dim=1)
@@ -165,7 +165,7 @@ class MoCo(nn.Module):
         logits /= self.T
 
         # labels: positive key indicators
-        labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda()# 将全0标签移动到GPU上
+        labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda()# 将全0标签移动到GPU上，形状是n*1的全0向量
 
         # dequeue and enqueue
         self._dequeue_and_enqueue(k)# k is NxC(batch_size x Dim)

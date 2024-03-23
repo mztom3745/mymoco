@@ -448,10 +448,10 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
             images = images.cuda(args.gpu, non_blocking=True)
             print("*t**images'shape:",images.size())#added
         target = target.cuda(args.gpu, non_blocking=True)
-        print("target",target)
+        print("target",target.size())
         # compute output
         output = model(images)
-        print("output",output)
+        print("output",output.size())
         print("***")
         loss = criterion(output, target)
 
@@ -493,10 +493,10 @@ def validate(val_loader, model, criterion, args):
                 images = images.cuda(args.gpu, non_blocking=True)
                 print("**v*image",images.size())
             target = target.cuda(args.gpu, non_blocking=True)
-            print("target:",target)
+            print("target:",target.size())
                 
             # compute output
-            output = model(images)
+            output = model(images.size())
             loss = criterion(output, target)
             print("output:",output)
             print("***")

@@ -446,7 +446,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         
         if args.gpu is not None:
             images = images.cuda(args.gpu, non_blocking=True)
-            print("*t**images'shape:".format(torch.size(images)))#added
+            print("*t**images'shape:".format(images.size()))#added
         target = target.cuda(args.gpu, non_blocking=True)
         print("target",target)
         # compute output
@@ -491,7 +491,7 @@ def validate(val_loader, model, criterion, args):
         for i, (images, target) in enumerate(val_loader):
             if args.gpu is not None:
                 images = images.cuda(args.gpu, non_blocking=True)
-                print("**v*image",torch.size(images))
+                print("**v*image",images.size())
             target = target.cuda(args.gpu, non_blocking=True)
             print("target:",target)
                 

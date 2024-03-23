@@ -446,7 +446,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         
         if args.gpu is not None:
             images = images.cuda(args.gpu, non_blocking=True)
-            print("*t**images'shape:".format(images.size()))#added
+            print("*t**images'shape:",images.size())#added
         target = target.cuda(args.gpu, non_blocking=True)
         print("target",target)
         # compute output

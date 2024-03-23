@@ -228,8 +228,9 @@ def main_worker(gpu, ngpus_per_node, args):
     print("=> creating model '{}'".format(args.arch))
     model = models.__dict__[args.arch]()#只是创建了一个resnet50
     #替换1000维输出为4
-    model = model.replace(model.fc, nn.Linear(model.fc.in_features, 8))
-    print(model) #打印这个resnet50
+    fc_inputs = model.fc.in_features
+    model.fc = nn.Linear(fc_inputs, 4)
+    print(model) #added
     
     # freeze all layers but the last fc
     for name, param in model.named_parameters():

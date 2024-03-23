@@ -246,7 +246,7 @@ def main_worker(gpu, ngpus_per_node, args):
             state_dict = checkpoint["state_dict"]
             for k in list(state_dict.keys()):
                 # retain only encoder_q up to before the embedding layer
-                if k.startswith("module.encoder_q") and not k.startswith(
+                if k.startswith("module.encoder_q") and not k.startswith( #他只加载了backbone,也就是encoder_q的参数,且未加载最后的fc
                     "module.encoder_q.fc"
                 ):
                     # remove prefix
@@ -294,14 +294,14 @@ def main_worker(gpu, ngpus_per_node, args):
             model = torch.nn.DataParallel(model).cuda()
 
     # define loss function (criterion) and optimizer
-    criterion = nn.CrossEntropyLoss().cuda(args.gpu)
+    criterion = nn.CrossEntropyLoss().cuda(args.gpu)#交叉熵损失函数
 
     # optimize only the linear classifier
-    parameters = list(filter(lambda p: p.requires_grad, model.parameters()))
+    parameters = list(filter(lambda p: p.requires_grad, model.parameters()))#筛选出梯度计算的最后一层fc
     assert len(parameters) == 2  # fc.weight, fc.bias
     optimizer = torch.optim.SGD(
         parameters, args.lr, momentum=args.momentum, weight_decay=args.weight_decay
-    )
+    )#SGD优化算法
 
     # optionally resume from a checkpoint
     if args.resume:
@@ -434,12 +434,12 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
     Under the protocol of linear classification on frozen features/models,
     it is not legitimate to change any part of the pre-trained model.
     BatchNorm in train mode may revise running mean/std (even if it receives
-    no gradient), which are part of the model parameters too.
+    no gradient), which are part of the model parameters too.#也不能改变标准差
     """
-    model.eval()
+    model.eval()# model.eval () 是保证 BN 用全部训练数据的均值和方差
 
     end = time.time()
-    for i, (images, target) in enumerate(train_loader):
+    for i, (images, target) in enumerate(train_loader): #这次的train使用了标签target
         # measure data loading time
         data_time.update(time.time() - end)
 

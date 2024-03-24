@@ -233,9 +233,9 @@ def main_worker(gpu, ngpus_per_node, args):
     print(model) #added
     
     # freeze all layers but the last fc
-    for name, param in model.named_parameters():
-        if name not in ["fc.weight", "fc.bias"]:
-            param.requires_grad = False
+    #for name, param in model.named_parameters():
+        #if name not in ["fc.weight", "fc.bias"]:
+            #param.requires_grad = False
     # init the fc layer
     model.fc.weight.data.normal_(mean=0.0, std=0.01)
     model.fc.bias.data.zero_()
@@ -419,8 +419,8 @@ def main_worker(gpu, ngpus_per_node, args):
                 },
                 is_best,
             )
-            if epoch == args.start_epoch:
-                sanity_check(model.state_dict(), args.pretrained)
+            #if epoch == args.start_epoch:
+                #sanity_check(model.state_dict(), args.pretrained)
 
 
 def train(train_loader, model, criterion, optimizer, epoch, args):
@@ -505,9 +505,9 @@ def validate(val_loader, model, criterion, args):
             loss = criterion(output, target)
             
             # measure accuracy and record loss
-            print("------validate------")
+            #print("------validate------")
             acc1, acc5 = accuracy(output, target, topk=(1, 5))
-            print("------validate------")
+            #print("------validate------")
             losses.update(loss.item(), images.size(0))
             top1.update(acc1[0], images.size(0))
             top5.update(acc5[0], images.size(0))

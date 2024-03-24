@@ -623,7 +623,7 @@ def accuracy(output, target, topk=(1,)):
         pred = pred.t()
         _, pred1 = output.topk(2, 1, True, True)
         pred1 = pred1.t()
-        print("output_pred1:",pred1)
+        #print("output_pred1:",pred1)
         correct = pred.eq(target.view(1, -1).expand_as(pred))
         #print("correct:",correct)
         res = []

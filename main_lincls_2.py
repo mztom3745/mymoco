@@ -410,7 +410,7 @@ def main_worker(gpu, ngpus_per_node, args):
         train(train_loader, model, criterion, optimizer, epoch, args)
 
         # evaluate on validation set
-        acc1 = validate(val_loader, model, criterion, args)
+        acc1 = validate(val_loader, model, criterion, args,epoch)
         
         #added
         if args.accfile!="" and args.gpu == 0:
@@ -489,9 +489,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         top1.update(acc1[0], images.size(0))
         top5.update(acc5[0], images.size(0))
         
-        if args.epoch0f !="" and args.gpu == 0:
-            with open(args.epoch0f,"a") as f:
-                f.write(f"{top1.avg:.3f}\n")
+        
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -506,7 +504,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
             progress.display(i)
 
 
-def validate(val_loader, model, criterion, args):
+def validate(val_loader, model, criterion, args ,epoch):
     batch_time = AverageMeter("Time", ":6.3f")
     losses = AverageMeter("Loss", ":.4e")
     top1 = AverageMeter("Acc@1", ":6.2f")
@@ -538,6 +536,10 @@ def validate(val_loader, model, criterion, args):
             top1.update(acc1[0], images.size(0))
             top5.update(acc5[0], images.size(0))
 
+            if args.epoch0f !="" and args.gpu == 0:
+            with open(args.epoch0f,"a") as f:
+                f.write(f"{top1.avg:.3f}\n")
+                
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()

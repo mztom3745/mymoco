@@ -157,7 +157,7 @@ parser.add_argument(
     "--accfile",default="", type=str, help="存放acc结果"
 )
 parser.add_argument(
-    "--epoch0f ",default="", type=str, help="存放第一轮acc结果"
+    "--epoch0f",default="", type=str, help="存放第一轮acc结果"
 )
 
 best_acc1 = 0

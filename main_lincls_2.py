@@ -453,11 +453,12 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
             images = images.cuda(args.gpu, non_blocking=True)
             #print("*t**images'shape:",images.size())#added
         target = target.cuda(args.gpu, non_blocking=True)
-        #print("target",target.size())
+        print("target:",target)
         # compute output
         output = model(images)
-        #print("output",output.size())
-        #print("***")
+        _, pred = output.topk(5, 1, True, True)
+        print("pred5 is",pred)
+        print("output:",output.size())
         loss = criterion(output, target)
 
         # measure accuracy and record loss

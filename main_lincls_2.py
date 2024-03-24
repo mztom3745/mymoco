@@ -411,7 +411,7 @@ def main_worker(gpu, ngpus_per_node, args):
         #added
         if(args.accfile):
             with open(args.accfile,"a") as f:
-                f.write(f"{epoch} {acc1:3f}\n")
+                f.write(f"{epoch} {acc1:.3f}\n")
         
         # remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1

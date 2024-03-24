@@ -505,9 +505,9 @@ def validate(val_loader, model, criterion, args):
             loss = criterion(output, target)
             
             # measure accuracy and record loss
-            #print("------validate------")
+            print("------validate------")
             acc1, acc5 = accuracy(output, target, topk=(1, 5))
-            #print("------validate------")
+            print("------validate------")
             losses.update(loss.item(), images.size(0))
             top1.update(acc1[0], images.size(0))
             top5.update(acc5[0], images.size(0))
@@ -621,7 +621,7 @@ def accuracy(output, target, topk=(1,)):
         batch_size = target.size(0)
         _, pred = output.topk(maxk, 1, True, True)
         pred = pred.t()
-        #print("output_pred:",pred)
+        print("output_pred:",pred)
         correct = pred.eq(target.view(1, -1).expand_as(pred))
         #print("correct:",correct)
         res = []

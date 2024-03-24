@@ -260,7 +260,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
             args.start_epoch = 0
             msg = model.load_state_dict(state_dict, strict=False)
-            print(set(msg.missing_keys))
+            print("msg.missing_keys:",set(msg.missing_keys))
             assert set(msg.missing_keys) == {"fc.weight", "fc.bias"}# 不加载最后的fc层
 
             print("=> loaded pre-trained model '{}'".format(args.pretrained))
@@ -622,11 +622,13 @@ def accuracy(output, target, topk=(1,)):
         pred = pred.t()
         print("output_pred:",pred)
         correct = pred.eq(target.view(1, -1).expand_as(pred))
-
+        print("correct:",correct)
         res = []
         for k in topk:
             correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
+            print("correct_k:",correct_k)
             res.append(correct_k.mul_(100.0 / batch_size))
+        print("res:",res)
         return res
 
 

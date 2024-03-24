@@ -394,8 +394,8 @@ def main_worker(gpu, ngpus_per_node, args):
         validate(val_loader, model, criterion, args) #直接进行评估，并返回结果
         return
         
-    if(arg.accfile):
-        with open(arg.accfile,"a") as f:
+    if(args.accfile):
+        with open(args.accfile,"w") as f: #清空
             f.write("")
             
     for epoch in range(args.start_epoch, args.epochs):
@@ -409,8 +409,8 @@ def main_worker(gpu, ngpus_per_node, args):
         # evaluate on validation set
         acc1 = validate(val_loader, model, criterion, args)
         #added
-        if(arg.accfile):
-            with open(arg.accfile,"a") as f:
+        if(args.accfile):
+            with open(args.accfile,"a") as f:
                 f.write(f"{epoch} {top1.avg}")
         
         # remember best acc@1 and save checkpoint

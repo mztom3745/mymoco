@@ -459,11 +459,12 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         loss = criterion(output, target)
 
         # measure accuracy and record loss
-        print("******train******")
+        #print("******train******")
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
-        print("******train******")
+        #print("******train******")
         losses.update(loss.item(), images.size(0))
-        
+        top1.update(acc1[0], images.size(0))
+        top5.update(acc5[0], images.size(0))
         
 
         # compute gradient and do SGD step
@@ -504,9 +505,9 @@ def validate(val_loader, model, criterion, args):
             loss = criterion(output, target)
             
             # measure accuracy and record loss
-            print("------validate------")
+            #print("------validate------")
             acc1, acc5 = accuracy(output, target, topk=(1, 5))
-            print("------validate------")
+            #print("------validate------")
             losses.update(loss.item(), images.size(0))
             top1.update(acc1[0], images.size(0))
             top5.update(acc5[0], images.size(0))
@@ -613,22 +614,22 @@ def adjust_learning_rate(optimizer, epoch, args):
 def accuracy(output, target, topk=(1,)):
     """Computes the accuracy over the k top predictions for the specified values of k"""
     with torch.no_grad():
-        print("target_size:",target.size())
-        print("output_size:",output.size())
-        print("target:",target)
+        #print("target_size:",target.size())
+        #print("output_size:",output.size())
+        #print("target:",target)
         maxk = max(topk)
         batch_size = target.size(0)
         _, pred = output.topk(maxk, 1, True, True)
         pred = pred.t()
-        print("output_pred:",pred)
+        #print("output_pred:",pred)
         correct = pred.eq(target.view(1, -1).expand_as(pred))
-        print("correct:",correct)
+        #print("correct:",correct)
         res = []
         for k in topk:
             correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
-            print("correct_k:",correct_k)
+            #print("correct_k:",correct_k)
             res.append(correct_k.mul_(100.0 / batch_size))
-        print("res:",res)
+        #print("res:",res)
         return res
 
 

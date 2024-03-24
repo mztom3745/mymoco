@@ -153,6 +153,9 @@ parser.add_argument(
 parser.add_argument(
     "--pretrained", default="", type=str, help="path to moco pretrained checkpoint"
 )
+parser.add_argument(
+    "--accfile",default="acc.txt", type=str, help="存放acc结果"
+)
 
 best_acc1 = 0
 
@@ -388,9 +391,13 @@ def main_worker(gpu, ngpus_per_node, args):
     )
 
     if args.evaluate:
-        validate(val_loader, model, criterion, args)
+        validate(val_loader, model, criterion, args) #直接进行评估，并返回结果
         return
-
+        
+    if(arg.accfile):
+        with open(arg.accfile,"a") as f:
+            f.write("")
+            
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
@@ -401,11 +408,15 @@ def main_worker(gpu, ngpus_per_node, args):
 
         # evaluate on validation set
         acc1 = validate(val_loader, model, criterion, args)
+        #added
+        if(arg.accfile):
+            with open(arg.accfile,"a") as f:
+                f.write(f"{epoch} {top1.avg}")
         
         # remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1
         best_acc1 = max(acc1, best_acc1)
-
+            
         if not args.multiprocessing_distributed or (
             args.multiprocessing_distributed and args.rank % ngpus_per_node == 0
         ):

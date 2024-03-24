@@ -506,7 +506,7 @@ def validate(val_loader, model, criterion, args):
             # measure accuracy and record loss
             print("------validate------")
             acc1, acc5 = accuracy(output, target, topk=(1, 5))
-            rint("------validate------")
+            print("------validate------")
             losses.update(loss.item(), images.size(0))
             top1.update(acc1[0], images.size(0))
             top5.update(acc5[0], images.size(0))

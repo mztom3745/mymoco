@@ -74,7 +74,7 @@ parser.add_argument(
 parser.add_argument(
     "--lr",
     "--learning-rate",
-    default=30.0,
+    default=0.03,
     type=float,
     metavar="LR",
     help="initial learning rate",
@@ -233,7 +233,7 @@ def main_worker(gpu, ngpus_per_node, args):
     print(model) #added
     
     # freeze all layers but the last fc
-    #for name, param in model.named_parameters():
+    # for name, param in model.named_parameters():
     #    if name not in ["fc.weight", "fc.bias"]:
     #        param.requires_grad = False
     # init the fc layer
@@ -419,7 +419,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 },
                 is_best,
             )
-            if epoch == args.start_epoch:
+            #if epoch == args.start_epoch:
                 #sanity_check(model.state_dict(), args.pretrained)#需要训练全部的权重
 
 

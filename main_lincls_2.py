@@ -616,12 +616,14 @@ def accuracy(output, target, topk=(1,)):
     with torch.no_grad():
         #print("target_size:",target.size())
         #print("output_size:",output.size())
-        #print("target:",target)
+        print("target:",target)
         maxk = max(topk)
         batch_size = target.size(0)
         _, pred = output.topk(maxk, 1, True, True)
         pred = pred.t()
-        print("output_pred:",pred)
+        _, pred1 = output.topk((1,), 1, True, True)
+        pred1 = pred1.t()
+        print("output_pred1:",pred1)
         correct = pred.eq(target.view(1, -1).expand_as(pred))
         #print("correct:",correct)
         res = []

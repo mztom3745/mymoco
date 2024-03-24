@@ -451,20 +451,17 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         
         if args.gpu is not None:
             images = images.cuda(args.gpu, non_blocking=True)
-            #print("*t**images'shape:",images.size())#added
         target = target.cuda(args.gpu, non_blocking=True)
         
         # compute output
         output = model(images)
-        _, pred = output.topk(5, 1, True, True)
-        print("target_size:",target.size())
-        print("output_size:",output.size())
-        print("target:",target)
-        print("output_pred:",pred)
+        
         loss = criterion(output, target)
 
         # measure accuracy and record loss
+        print("******train******")
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
+        print("******train******")
         losses.update(loss.item(), images.size(0))
         
         
@@ -499,20 +496,17 @@ def validate(val_loader, model, criterion, args):
         for i, (images, target) in enumerate(val_loader):
             if args.gpu is not None:
                 images = images.cuda(args.gpu, non_blocking=True)
-                #print("**v*image",images.size())
             target = target.cuda(args.gpu, non_blocking=True)
-            #print("target:",target)
                 
             # compute output
             output = model(images)
-            _, pred = output.topk(5, 1, True, True)
-            #print("pred5 is",pred)
-            #print("output:",output.size())
+
             loss = criterion(output, target)
-            #print("***")
             
             # measure accuracy and record loss
+            print("------validate------")
             acc1, acc5 = accuracy(output, target, topk=(1, 5))
+            rint("------validate------")
             losses.update(loss.item(), images.size(0))
             top1.update(acc1[0], images.size(0))
             top5.update(acc5[0], images.size(0))
@@ -619,11 +613,14 @@ def adjust_learning_rate(optimizer, epoch, args):
 def accuracy(output, target, topk=(1,)):
     """Computes the accuracy over the k top predictions for the specified values of k"""
     with torch.no_grad():
+        print("target_size:",target.size())
+        print("output_size:",output.size())
+        print("target:",target)
         maxk = max(topk)
         batch_size = target.size(0)
-
         _, pred = output.topk(maxk, 1, True, True)
         pred = pred.t()
+        print("output_pred:",pred)
         correct = pred.eq(target.view(1, -1).expand_as(pred))
 
         res = []

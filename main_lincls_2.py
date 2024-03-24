@@ -233,9 +233,9 @@ def main_worker(gpu, ngpus_per_node, args):
     print(model) #added
     
     # freeze all layers but the last fc
-    #for name, param in model.named_parameters():
-        #if name not in ["fc.weight", "fc.bias"]:
-            #param.requires_grad = False
+    for name, param in model.named_parameters():
+        if name not in ["fc.weight", "fc.bias"]:
+            param.requires_grad = False
     # init the fc layer
     model.fc.weight.data.normal_(mean=0.0, std=0.01)
     model.fc.bias.data.zero_()
@@ -419,8 +419,8 @@ def main_worker(gpu, ngpus_per_node, args):
                 },
                 is_best,
             )
-            #if epoch == args.start_epoch:
-                #sanity_check(model.state_dict(), args.pretrained)
+            if epoch == args.start_epoch:
+                sanity_check(model.state_dict(), args.pretrained)
 
 
 def train(train_loader, model, criterion, optimizer, epoch, args):

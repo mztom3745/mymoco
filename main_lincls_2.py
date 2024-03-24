@@ -627,7 +627,7 @@ def accuracy(output, target, topk=(1,)):
     with torch.no_grad():
         #print("target_size:",target.size())
         #print("output_size:",output.size())
-        print("target:",target)
+        #print("target:",target)
         maxk = max(topk)
         batch_size = target.size(0)
         _, pred = output.topk(maxk, 1, True, True)

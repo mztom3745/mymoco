@@ -154,7 +154,10 @@ parser.add_argument(
     "--pretrained", default="", type=str, help="path to moco pretrained checkpoint"
 )
 parser.add_argument(
-    "--accfile",default="acc.txt", type=str, help="存放acc结果"
+    "--accfile",default="", type=str, help="存放acc结果"
+)
+parser.add_argument(
+    "--epoch0f ",default="", type=str, help="存放第一轮acc结果"
 )
 
 best_acc1 = 0
@@ -394,7 +397,7 @@ def main_worker(gpu, ngpus_per_node, args):
         validate(val_loader, model, criterion, args) #直接进行评估，并返回结果
         return
         
-    if(args.accfile):
+    if args.accfile!="" and args.gpu == 0:
         with open(args.accfile,"w") as f: #清空
             f.write("")
             
@@ -404,12 +407,13 @@ def main_worker(gpu, ngpus_per_node, args):
         adjust_learning_rate(optimizer, epoch, args)
 
         # train for one epoch
-        train(train_loader, model, criterion, optimizer, epoch, args)
+        train(train_loader, model, criterion, optimizer, epoch, args, epoch)
 
         # evaluate on validation set
         acc1 = validate(val_loader, model, criterion, args)
+        
         #added
-        if(args.accfile):
+        if args.accfile!="" and args.gpu == 0:
             with open(args.accfile,"a") as f:
                 f.write(f"{epoch} {acc1:.3f}\n")
         
@@ -434,7 +438,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 sanity_check(model.state_dict(), args.pretrained)
 
 
-def train(train_loader, model, criterion, optimizer, epoch, args):
+def train(train_loader, model, criterion, optimizer, epoch, args, epoch):
     batch_time = AverageMeter("Time", ":6.3f")
     data_time = AverageMeter("Data", ":6.3f")
     losses = AverageMeter("Loss", ":.4e")
@@ -456,6 +460,10 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
     model.eval()
     
     end = time.time()
+    if epoch==0 and args.epoch0f != "":
+        with open(args.epoch0f,"w") as f:
+            f.write("")
+        
     for i, (images, target) in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
@@ -463,7 +471,9 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         if args.gpu is not None:
             images = images.cuda(args.gpu, non_blocking=True)
         target = target.cuda(args.gpu, non_blocking=True)
+
         
+                
         # compute output
         output = model(images)
         
@@ -472,6 +482,10 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         # measure accuracy and record loss
         #print("******train******")
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
+        
+        if args.epoch0f !="" and args.gpu == 0:
+            with open(args.epoch0f,"a") as f:
+                f.write(f"{acc1:.3f}\n")
         #print("******train******")
         losses.update(loss.item(), images.size(0))
         top1.update(acc1[0], images.size(0))

@@ -483,14 +483,15 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         #print("******train******")
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
         
-        if args.epoch0f !="" and args.gpu == 0:
-            with open(args.epoch0f,"a") as f:
-                f.write(f"{acc1:.3f}\n")
+        
         #print("******train******")
         losses.update(loss.item(), images.size(0))
         top1.update(acc1[0], images.size(0))
         top5.update(acc5[0], images.size(0))
         
+        if args.epoch0f !="" and args.gpu == 0:
+            with open(args.epoch0f,"a") as f:
+                f.write(f"{top1.avg:.3f}\n")
 
         # compute gradient and do SGD step
         optimizer.zero_grad()

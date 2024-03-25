@@ -535,10 +535,11 @@ def validate(val_loader, model, criterion, args ,epoch):
             losses.update(loss.item(), images.size(0))
             top1.update(acc1[0], images.size(0))
             top5.update(acc5[0], images.size(0))
-
-            if args.epoch0f !="" and args.gpu == 0:
+            
+            if args.epoch0f !="" and args.gpu == 0 and (epoch==0 or epoch==1):
                 with open(args.epoch0f,"a") as f:
-                    f.write(f"{top1.avg:.3f}\n")
+                    mode, _ = torch.mode(target)
+                    f.write(f"{epoch} {mode} {top1.avg:.3f}\n")
                 
             # measure elapsed time
             batch_time.update(time.time() - end)

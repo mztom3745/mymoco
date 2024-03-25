@@ -537,8 +537,8 @@ def validate(val_loader, model, criterion, args ,epoch):
             top5.update(acc5[0], images.size(0))
 
             if args.epoch0f !="" and args.gpu == 0:
-            with open(args.epoch0f,"a") as f:
-                f.write(f"{top1.avg:.3f}\n")
+                with open(args.epoch0f,"a") as f:
+                    f.write(f"{top1.avg:.3f}\n")
                 
             # measure elapsed time
             batch_time.update(time.time() - end)

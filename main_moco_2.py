@@ -176,7 +176,13 @@ parser.add_argument(
 )
 parser.add_argument("--cos", action="store_true", help="use cosine lr schedule")
 
-
+#added
+parser.add_argument(
+    "--train_accfile",default="", type=str, help="存放train_acc结果"
+)
+parser.add_argument(
+    "--val_accfile",default="", type=str, help="存放val_acc结果"
+)
 def main():
     args = parser.parse_args()
 
@@ -323,6 +329,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
     # Data loading code
     traindir = os.path.join(args.data, "train")
+    valdir = os.path.join(args.data, "val")
     normalize = transforms.Normalize(
         mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
     )# 用于对图像进行标准化处理，具体来说，就是将图像的像素值缩放到一个固定的范围
@@ -349,7 +356,7 @@ def main_worker(gpu, ngpus_per_node, args):
             transforms.ToTensor(),
             normalize,
         ]
-
+    
     train_dataset = datasets.ImageFolder(
         traindir, moco.loader.TwoCropsTransform(transforms.Compose(augmentation))# 文件夹路径和指定数据增强方法
     )
@@ -369,16 +376,48 @@ def main_worker(gpu, ngpus_per_node, args):
         drop_last=True,
     )
 
+    #added
+    val_loader = torch.utils.data.DataLoader(
+        datasets.ImageFolder(
+            valdir,
+            transforms.Compose(
+                [
+                    transforms.Resize(256),
+                    transforms.CenterCrop(224),
+                    transforms.ToTensor(),
+                    normalize,
+                ]
+            ),
+        ),
+        batch_size=args.batch_size,
+        shuffle=False,
+        num_workers=args.workers,
+        pin_memory=True,
+    )
+    
+    if args.train_accfile!="" and args.gpu == 0:
+        with open(args.train_accfile,"w") as f: #清空
+            f.write("")
+    if args.val_accfile!="" and args.gpu == 0:
+        with open(args.val_accfile,"w") as f: #清空
+            f.write("")
+            
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
             # 为了让每一个epoch的采样顺序不一样，在每次epoch循环的开始，
             # 需要调用set_epoch()函数来更新 self.epoch
         adjust_learning_rate(optimizer, epoch, args)
-
+        
         # train for one epoch
         train(train_loader, model, criterion, optimizer, epoch, args)
-
+        
+        #added
+        acc1 = validate(val_loader, model, criterion, args,epoch)
+        if args.val_accfile!="" and args.gpu == 0:
+            with open(args.val_accfile,"a") as f:
+                f.write(f"{epoch} {acc1:.3f}\n")
+        
         if not args.multiprocessing_distributed or (
             args.multiprocessing_distributed and args.rank % ngpus_per_node == 0 
             # ngpus_per_node为gpu总数，即一轮训练完成后
@@ -429,6 +468,11 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         losses.update(loss.item(), images[0].size(0))
         top1.update(acc1[0], images[0].size(0))
         top5.update(acc5[0], images[0].size(0))
+
+        #added
+        if args.train_accfile!="" and args.gpu == 0:
+            with open(args.train_accfile,"a") as f:
+                f.write(f"{epoch} {top1.val:.3f} {top1.avg:.3f}\n")
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -520,6 +564,55 @@ def accuracy(output, target, topk=(1,)):# Nx(1+K)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 
+def validate(val_loader, model, criterion, args ,epoch):
+    batch_time = AverageMeter("Time", ":6.3f")
+    losses = AverageMeter("Loss", ":.4e")
+    top1 = AverageMeter("Acc@1", ":6.2f")
+    top5 = AverageMeter("Acc@5", ":6.2f")
+    progress = ProgressMeter(
+        len(val_loader), [batch_time, losses, top1, top5], prefix="Test: "
+    )
+
+    # switch to evaluate mode
+    model.eval()
+
+    with torch.no_grad():
+        end = time.time()
+        for i, (images, target) in enumerate(val_loader):
+            if args.gpu is not None:
+                images = images.cuda(args.gpu, non_blocking=True)
+            target = target.cuda(args.gpu, non_blocking=True)
+                
+            # compute output
+            output = model(images)
+
+            loss = criterion(output, target)
+            
+            # measure accuracy and record loss
+            #print("------validate------")
+            acc1, acc5 = accuracy(output, target, topk=(1, 5))
+            #print("------validate------")
+            losses.update(loss.item(), images.size(0))
+            top1.update(acc1[0], images.size(0))
+            top5.update(acc5[0], images.size(0))
+            
+            if args.epoch0f !="" and args.gpu == 0 and (epoch==0 or epoch==1):
+                with open(args.epoch0f,"a") as f:
+                    mode, _ = torch.mode(target)
+                    f.write(f"{epoch} {mode} {acc1[0]:.3f} {top1.avg:.3f}\n")
+                
+            # measure elapsed time
+            batch_time.update(time.time() - end)
+            end = time.time()
+
+            if i % args.print_freq == 0:
+                progress.display(i)
+
+        # TODO: this should also be done with the ProgressMeter
+        print(
+            " * T_Acc@1 {top1.avg:.3f} T_Acc@5 {top5.avg:.3f}".format(top1=top1, top5=top5)
+        )
+    return top1.avg
 
 if __name__ == "__main__":
     main()

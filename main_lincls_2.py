@@ -540,7 +540,7 @@ def validate(val_loader, model, criterion, args ,epoch):
             top1.update(acc1[0], images.size(0))
             top5.update(acc5[0], images.size(0))
             
-            if args.epoch0f !="" and args.gpu == 0 and ((epoch>=0 and epoch <=5) or (epoch>=args.epochs-4 and epoch <= args.epochs):
+            if args.epoch0f !="" and args.gpu == 0 and ((epoch>=0 and epoch <=5) or (epoch>=args.epochs-4 and epoch <= args.epochs)):
                 with open(args.epoch0f,"a") as f:
                     mode, _ = torch.mode(target)
                     f.write(f"{epoch} {mode} {acc1[0]:.3f} {top1.avg:.3f}\n")

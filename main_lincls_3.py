@@ -306,7 +306,7 @@ def main_worker(gpu, ngpus_per_node, args):
             model = torch.nn.DataParallel(model).cuda()
 
     # define loss function (criterion) and optimizer
-    criterion = nn.CrossEntropyLoss().cuda(args.gpu)
+    criterion = nn.CrossEntropyLoss().cuda(args.gpu)#使用简单的交叉熵来衡量损失
 
     # optimize only the linear classifier
     parameters = list(filter(lambda p: p.requires_grad, model.parameters()))
@@ -526,10 +526,20 @@ def validate(val_loader, model, criterion, args ,epoch):
             if args.gpu is not None:
                 images = images.cuda(args.gpu, non_blocking=True)
             target = target.cuda(args.gpu, non_blocking=True)
-                
+            
             # compute output
             output = model(images)
-            
+
+            #added
+            if (epoch>=0 and epoch <5) or (epoch>=args.epochs-5 and epoch < args.epochs):
+                confusion_matrix = torch.zeros(num_classes, num_classes, dtype=torch.long)
+                _, pred = output.topk(maxk, 1, True, True)
+                pred=pred.t()
+                pred = pred.squeeze()
+                for t, p in zip(target.view(-1), pred.view(-1)):
+                    confusion_matrix[t.long(), p.long()] += 1
+                print(f"***epoch:{epoch}***")
+                print(confusion_matrix)
             loss = criterion(output, target)
             
             # measure accuracy and record loss
@@ -544,7 +554,7 @@ def validate(val_loader, model, criterion, args ,epoch):
                 with open(args.epoch0f,"a") as f:
                     mode, _ = torch.mode(target)
                     f.write(f"{epoch} {mode} {acc1[0]:.3f} {top1.avg:.3f}\n")
-                
+            
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()

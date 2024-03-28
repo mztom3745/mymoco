@@ -400,7 +400,10 @@ def main_worker(gpu, ngpus_per_node, args):
     if args.accfile!="" and args.gpu == 0:
         with open(args.accfile,"w") as f: #清空
             f.write("")
-            
+    
+    #centeradded
+    confusion_matrix = torch.zeros(9, 9, dtype=torch.long)#9类#added
+    
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
@@ -408,10 +411,13 @@ def main_worker(gpu, ngpus_per_node, args):
 
         # train for one epoch
         train(train_loader, model, criterion, optimizer, epoch, args)
-
-        # evaluate on validation set
-        acc1 = validate(val_loader, model, criterion, args,epoch)
         
+        # evaluate on validation set
+        acc1 = validate(val_loader, model, criterion, args, epoch, confusion_matrix)
+        
+        print(f"***epoch:{epoch}***")
+        print(confusion_matrix)
+        print(f"***-------------***")
         #added
         if args.accfile!="" and args.gpu == 0:
             with open(args.accfile,"a") as f:
@@ -506,7 +512,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
             progress.display(i)
 
 
-def validate(val_loader, model, criterion, args ,epoch):
+def validate(val_loader, model, criterion, args ,epoch,confusion_matrix):
     batch_time = AverageMeter("Time", ":6.3f")
     losses = AverageMeter("Loss", ":.4e")
     top1 = AverageMeter("Acc@1", ":6.2f")
@@ -531,16 +537,12 @@ def validate(val_loader, model, criterion, args ,epoch):
             output = model(images)
 
             #added
-            if (epoch>=0 and epoch <5) or (epoch>=args.epochs-5 and epoch < args.epochs):
-                confusion_matrix = torch.zeros(9, 9, dtype=torch.long)#9类#added
-                _, pred = output.topk(1, 1, True, True)
-                pred=pred.t()
-                pred = pred.squeeze()
-                for t, p in zip(target.view(-1), pred.view(-1)):
-                    confusion_matrix[t.long(), p.long()] += 1
-                print(f"***epoch:{epoch}***")
-                print(confusion_matrix)
-                print(f"***-------------***")
+            _, pred = output.topk(1, 1, True, True)
+            pred=pred.t()
+            pred = pred.squeeze()
+            for t, p in zip(target.view(-1), pred.view(-1)):
+                confusion_matrix[t.long(), p.long()] += 1
+                
             loss = criterion(output, target)
             
             # measure accuracy and record loss

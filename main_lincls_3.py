@@ -401,8 +401,6 @@ def main_worker(gpu, ngpus_per_node, args):
         with open(args.accfile,"w") as f: #清空
             f.write("")
     
-    #centeradded
-    confusion_matrix = torch.zeros(9, 9, dtype=torch.long)#9类#added
     
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
@@ -413,6 +411,7 @@ def main_worker(gpu, ngpus_per_node, args):
         train(train_loader, model, criterion, optimizer, epoch, args)
         
         # evaluate on validation set
+        confusion_matrix = torch.zeros(9, 9, dtype=torch.long)#9类#added
         acc1 = validate(val_loader, model, criterion, args, epoch, confusion_matrix)
         
         print(f"***epoch:{epoch}***")

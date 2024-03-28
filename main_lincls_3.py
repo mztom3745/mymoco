@@ -532,14 +532,15 @@ def validate(val_loader, model, criterion, args ,epoch):
 
             #added
             if (epoch>=0 and epoch <5) or (epoch>=args.epochs-5 and epoch < args.epochs):
-                confusion_matrix = torch.zeros(num_classes, num_classes, dtype=torch.long)
-                _, pred = output.topk(maxk, 1, True, True)
+                confusion_matrix = torch.zeros(9, 9, dtype=torch.long)#9类#added
+                _, pred = output.topk(1, 1, True, True)
                 pred=pred.t()
                 pred = pred.squeeze()
                 for t, p in zip(target.view(-1), pred.view(-1)):
                     confusion_matrix[t.long(), p.long()] += 1
                 print(f"***epoch:{epoch}***")
                 print(confusion_matrix)
+                print(f"***-------------***")
             loss = criterion(output, target)
             
             # measure accuracy and record loss

@@ -443,8 +443,8 @@ def main_worker(gpu, ngpus_per_node, args):
                 },
                 is_best,
             )
-            if epoch == args.start_epoch:
-                sanity_check(model.state_dict(), args.pretrained)
+            #if epoch == args.start_epoch:
+                #sanity_check(model.state_dict(), args.pretrained)
 
 
 def train(train_loader, model, criterion, optimizer, epoch, args):

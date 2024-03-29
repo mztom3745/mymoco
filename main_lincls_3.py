@@ -159,6 +159,9 @@ parser.add_argument(
 parser.add_argument(
     "--epoch0f",default="", type=str, help="存放第一轮acc结果"
 )
+parser.add_argument(
+    "--num_classes",default=9, type=int, help="待分类数据集的类别数"
+)
 
 best_acc1 = 0
 
@@ -235,7 +238,7 @@ def main_worker(gpu, ngpus_per_node, args):
     model = models.__dict__[args.arch]()#只是创建了一个resnet50
     #替换1000维输出为分类维度
     fc_inputs = model.fc.in_features
-    model.fc = nn.Linear(fc_inputs, 9)
+    model.fc = nn.Linear(fc_inputs, args.num_classes)
     print(model) #added
     
     # freeze all layers but the last fc

@@ -74,7 +74,7 @@ parser.add_argument(
 parser.add_argument(
     "--lr",
     "--learning-rate",
-    default=0.03,
+    default=0.05,
     type=float,
     metavar="LR",
     help="initial learning rate",
@@ -91,7 +91,7 @@ parser.add_argument("--momentum", default=0.9, type=float, metavar="M", help="mo
 parser.add_argument(
     "--wd",
     "--weight-decay",
-    default=0.0,
+    default=0.03,
     type=float,
     metavar="W",
     help="weight decay (default: 0.)",
@@ -152,6 +152,15 @@ parser.add_argument(
 
 parser.add_argument(
     "--pretrained", default="", type=str, help="path to moco pretrained checkpoint"
+)
+parser.add_argument(
+    "--accfile",default="", type=str, help="存放acc结果"
+)
+parser.add_argument(
+    "--epoch0f",default="", type=str, help="存放第一轮acc结果"
+)
+parser.add_argument(
+    "--num_classes",default=9, type=int, help="待分类数据集的类别数"
 )
 
 best_acc1 = 0
@@ -229,13 +238,13 @@ def main_worker(gpu, ngpus_per_node, args):
     model = models.__dict__[args.arch]()#只是创建了一个resnet50
     #替换1000维输出为分类维度
     fc_inputs = model.fc.in_features
-    model.fc = nn.Linear(fc_inputs, 9)
+    model.fc = nn.Linear(fc_inputs, args.num_classes)
     print(model) #added
     
     # freeze all layers but the last fc
-    # for name, param in model.named_parameters():
-    #    if name not in ["fc.weight", "fc.bias"]:
-    #        param.requires_grad = False
+    #for name, param in model.named_parameters():
+        #if name not in ["fc.weight", "fc.bias"]:
+            #param.requires_grad = False
     # init the fc layer
     model.fc.weight.data.normal_(mean=0.0, std=0.01)
     model.fc.bias.data.zero_()
@@ -249,15 +258,18 @@ def main_worker(gpu, ngpus_per_node, args):
             # rename moco pre-trained keys
             state_dict = checkpoint["state_dict"]
             for k in list(state_dict.keys()):
+                # retain only encoder_q up to before the embedding layer
                 if k.startswith("module.encoder_q") and not k.startswith(
                     "module.encoder_q.fc"
                 ):
+                    # remove prefix
+                    state_dict[k[len("module.encoder_q.") :]] = state_dict[k]
                 # delete renamed or unused k
                 del state_dict[k]
 
             args.start_epoch = 0
             msg = model.load_state_dict(state_dict, strict=False)
-            print("missing_keys",set(msg.missing_keys))
+            print("msg.missing_keys:",set(msg.missing_keys))
             assert set(msg.missing_keys) == {"fc.weight", "fc.bias"}# 不加载最后的fc层
 
             print("=> loaded pre-trained model '{}'".format(args.pretrained))
@@ -297,16 +309,14 @@ def main_worker(gpu, ngpus_per_node, args):
             model = torch.nn.DataParallel(model).cuda()
 
     # define loss function (criterion) and optimizer
-    criterion = nn.CrossEntropyLoss().cuda(args.gpu)
+    criterion = nn.CrossEntropyLoss().cuda(args.gpu)#使用简单的交叉熵来衡量损失
 
-    # optimize only the linear classifier 
-    '''
+    # optimize only the linear classifier
     parameters = list(filter(lambda p: p.requires_grad, model.parameters()))
     assert len(parameters) == 2  # fc.weight, fc.bias
-    '''
-    
     optimizer = torch.optim.SGD(
-        parameters, args.lr, momentum=args.momentum, weight_decay=args.weight_decay
+        parameters, args.lr, momentum=args.momentum, weight_decay=args.weight_decay，
+        nesterov=True #added
     )
 
     # optionally resume from a checkpoint
@@ -338,7 +348,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
     # Data loading code
     traindir = os.path.join(args.data, "train")
-    valdir = os.path.join(args.data, "val")
+    valdir = os.path.join(args.data, "test")#added:用测试集去看效果
     normalize = transforms.Normalize(
         mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
     )
@@ -388,9 +398,14 @@ def main_worker(gpu, ngpus_per_node, args):
     )
 
     if args.evaluate:
-        validate(val_loader, model, criterion, args)
+        validate(val_loader, model, criterion, args) #直接进行评估，并返回结果
         return
-
+        
+    if args.accfile!="" and args.gpu == 0:
+        with open(args.accfile,"w") as f: #清空
+            f.write("")
+    
+    
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
@@ -398,14 +413,23 @@ def main_worker(gpu, ngpus_per_node, args):
 
         # train for one epoch
         train(train_loader, model, criterion, optimizer, epoch, args)
-
+        
         # evaluate on validation set
-        acc1 = validate(val_loader, model, criterion, args)
+        confusion_matrix = torch.zeros(9, 9, dtype=torch.long)#9类#added
+        acc1 = validate(val_loader, model, criterion, args, epoch, confusion_matrix)
+        
+        print(f"***epoch:{epoch}***")
+        print(confusion_matrix)
+        print(f"***-------------***")
+        #added
+        if args.accfile!="" and args.gpu == 0:
+            with open(args.accfile,"a") as f:
+                f.write(f"{epoch} {acc1:.3f}\n")
         
         # remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1
         best_acc1 = max(acc1, best_acc1)
-
+            
         if not args.multiprocessing_distributed or (
             args.multiprocessing_distributed and args.rank % ngpus_per_node == 0
         ):
@@ -419,8 +443,8 @@ def main_worker(gpu, ngpus_per_node, args):
                 },
                 is_best,
             )
-            #if epoch == args.start_epoch:
-                #sanity_check(model.state_dict(), args.pretrained)#需要训练全部的权重
+            if epoch == args.start_epoch:
+                sanity_check(model.state_dict(), args.pretrained)
 
 
 def train(train_loader, model, criterion, optimizer, epoch, args):
@@ -445,24 +469,36 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
     model.eval()
     
     end = time.time()
+    if epoch==0 and args.epoch0f != "":
+        with open(args.epoch0f,"w") as f:
+            f.write("")
+        
     for i, (images, target) in enumerate(train_loader):
         # measure data loading time
+        #if(epoch==0):
+            #print("train len:",len(train_loader))
         data_time.update(time.time() - end)
         
         if args.gpu is not None:
             images = images.cuda(args.gpu, non_blocking=True)
-            #print("*t**images'shape:",images.size())#added
         target = target.cuda(args.gpu, non_blocking=True)
-        #print("target",target.size())
+
+        
+                
         # compute output
         output = model(images)
-        #print("output",output.size())
-        #print("***")
+        
         loss = criterion(output, target)
 
         # measure accuracy and record loss
+        #print("******train******")
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
+        
+        
+        #print("******train******")
         losses.update(loss.item(), images.size(0))
+        top1.update(acc1[0], images.size(0))
+        top5.update(acc5[0], images.size(0))
         
         
 
@@ -479,7 +515,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
             progress.display(i)
 
 
-def validate(val_loader, model, criterion, args):
+def validate(val_loader, model, criterion, args ,epoch,confusion_matrix):
     batch_time = AverageMeter("Time", ":6.3f")
     losses = AverageMeter("Loss", ":.4e")
     top1 = AverageMeter("Acc@1", ":6.2f")
@@ -493,27 +529,38 @@ def validate(val_loader, model, criterion, args):
 
     with torch.no_grad():
         end = time.time()
+        #if(epoch==0):
+            #print("val len:",len(val_loader))
         for i, (images, target) in enumerate(val_loader):
             if args.gpu is not None:
                 images = images.cuda(args.gpu, non_blocking=True)
-                #print("**v*image",images.size())
             target = target.cuda(args.gpu, non_blocking=True)
-            #print("target:",target)
-                
+            
             # compute output
             output = model(images)
-            _, pred = output.topk(5, 1, True, True)
-            #print("pred5 is",pred)
-            #print("output:",output.size())
+
+            #added
+            _, pred = output.topk(1, 1, True, True)
+            pred=pred.t()
+            pred = pred.squeeze()
+            for t, p in zip(target.view(-1), pred.view(-1)):
+                confusion_matrix[t.long(), p.long()] += 1
+                
             loss = criterion(output, target)
-            #print("***")
             
             # measure accuracy and record loss
+            #print("------validate------")
             acc1, acc5 = accuracy(output, target, topk=(1, 5))
+            #print("------validate------")
             losses.update(loss.item(), images.size(0))
             top1.update(acc1[0], images.size(0))
             top5.update(acc5[0], images.size(0))
-
+            
+            if args.epoch0f !="" and args.gpu == 0 and ((epoch>=0 and epoch <5) or (epoch>=args.epochs-5 and epoch < args.epochs)):
+                with open(args.epoch0f,"a") as f:
+                    mode, _ = torch.mode(target)
+                    f.write(f"{epoch} {mode} {acc1[0]:.3f} {top1.avg:.3f}\n")
+            
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
@@ -532,6 +579,34 @@ def save_checkpoint(state, is_best, filename="checkpoint.pth.tar"):
     torch.save(state, filename)
     if is_best:
         shutil.copyfile(filename, "model_best.pth.tar")
+
+
+def sanity_check(state_dict, pretrained_weights):
+    """
+    Linear classifier should not change any weights other than the linear layer.
+    This sanity check asserts nothing wrong happens (e.g., BN stats updated).
+    """
+    print("=> loading '{}' for sanity check".format(pretrained_weights))
+    checkpoint = torch.load(pretrained_weights, map_location="cpu")
+    state_dict_pre = checkpoint["state_dict"]
+
+    for k in list(state_dict.keys()):
+        # only ignore fc layer
+        if "fc.weight" in k or "fc.bias" in k:
+            continue
+
+        # name in pretrained model
+        k_pre = (
+            "module.encoder_q." + k[len("module.") :]
+            if k.startswith("module.")
+            else "module.encoder_q." + k
+        )
+
+        assert (
+            state_dict[k].cpu() == state_dict_pre[k_pre]
+        ).all(), "{} is changed in linear classifier training.".format(k)
+
+    print("=> sanity check passed.")
 
 
 class AverageMeter:
@@ -588,17 +663,24 @@ def adjust_learning_rate(optimizer, epoch, args):
 def accuracy(output, target, topk=(1,)):
     """Computes the accuracy over the k top predictions for the specified values of k"""
     with torch.no_grad():
+        #print("target_size:",target.size())
+        #print("output_size:",output.size())
+        #print("target:",target)
         maxk = max(topk)
         batch_size = target.size(0)
-
         _, pred = output.topk(maxk, 1, True, True)
         pred = pred.t()
+        _, pred1 = output.topk(2, 1, True, True)
+        pred1 = pred1.t()
+        #print("output_pred1:",pred1)
         correct = pred.eq(target.view(1, -1).expand_as(pred))
-
+        #print("correct:",correct)
         res = []
         for k in topk:
             correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
+            #print("correct_k:",correct_k)
             res.append(correct_k.mul_(100.0 / batch_size))
+        #print("res:",res)
         return res
 
 

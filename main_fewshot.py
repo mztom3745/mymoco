@@ -415,7 +415,7 @@ def main_worker(gpu, ngpus_per_node, args):
         train(train_loader, model, criterion, optimizer, epoch, args)
         
         # evaluate on validation set
-        confusion_matrix = torch.zeros(9, 9, dtype=torch.long)#9类#added
+        confusion_matrix = torch.zeros(args.num_classes, args.num_classes, dtype=torch.long)#9类#added
         acc1 = validate(val_loader, model, criterion, args, epoch, confusion_matrix)
         
         print(f"***epoch:{epoch}***")

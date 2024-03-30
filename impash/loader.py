@@ -7,6 +7,7 @@ import random
 import numpy as np
 
 from PIL import ImageFilter
+from PIL import Image
 
 
 class FourCropsTransform:

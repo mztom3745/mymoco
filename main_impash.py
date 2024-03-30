@@ -429,7 +429,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         #added
         print("**images.shape**")
         for i in range(0,4):
-            print(images[i].shape())
+            print(images[i].size())
         print("**")
         if args.gpu is not None:
             images[0] = images[0].cuda(args.gpu, non_blocking=True)

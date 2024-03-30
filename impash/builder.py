@@ -216,7 +216,7 @@ class IMPaSh(nn.Module):
         # dequeue and enqueue
         self._dequeue_and_enqueue(k1,k2)# k is NxC(batch_size x Dim)
 
-        return logits1, logits2, logits3, logits4, labels2
+        return logits1, logits2, logits3, logits4, labels
 
 
 # utils

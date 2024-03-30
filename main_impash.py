@@ -178,6 +178,10 @@ parser.add_argument(
 )
 parser.add_argument("--cos", action="store_true", help="use cosine lr schedule")
 
+#added
+parser.add_argument(
+    "--train_accfile",default="", type=str, help="存放train_acc结果"
+)
 
 def main():
     args = parser.parse_args()
@@ -380,6 +384,10 @@ def main_worker(gpu, ngpus_per_node, args):
         drop_last=True,
     )
 
+    if args.train_accfile!="" and args.gpu == 0:
+        with open(args.train_accfile,"w") as f: #清空
+            f.write("")
+            
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
@@ -425,7 +433,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
     for i, (images, _) in enumerate(train_loader): # 忽略数据集中的target，同时获取索引和元素
         # measure data loading time
         data_time.update(time.time() - end)
-        print("i:",i)
+        #print("i:",i)
         #added
         #print("**images.shape**")
         #for i in range(0,4):
@@ -450,6 +458,11 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         top1.update(acc1[0], images[0].size(0))
         top5.update(acc5[0], images[0].size(0))
 
+        #added
+        if args.train_accfile!="" and args.gpu == 0:
+            with open(args.train_accfile,"a") as f:
+                f.write(f"{epoch} {top1.val:.3f} {top1.avg:.3f}\n")
+                
         # compute gradient and do SGD step
         optimizer.zero_grad()
         loss.backward()
@@ -460,7 +473,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         end = time.time()
         
         if i % args.print_freq == 0:
-            print("entering_print")
+            #print("entering_print")
             progress.display(i) #打印信息
 
 

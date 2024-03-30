@@ -159,18 +159,18 @@ class IMPaSh(nn.Module):
         """
 
         # compute query features
-        print("**enter_forward**")
+        #print("**enter_forward**")
         q1 = self.encoder_q(im_q1)  # queries: NxC
         q1 = self.q1_mlp(q1)
         q1 = nn.functional.normalize(q1, dim=1) #沿着张量的第一个维度（通常是特征维度的方向）进行归一化
         q2 = self.encoder_q(im_q2)  # queries: NxC
         q2 = self.q2_mlp(q2)
         q2 = nn.functional.normalize(q2, dim=1)
-        print("**q_size**")
-        print(q1.size())
-        print(q1)
-        print(q2.size())
-        print(q2)
+        #print("**q_size**")
+        #print(q1.size())
+        #print(q1)
+        #print(q2.size())
+        #print(q2)
         # compute key features
         with torch.no_grad():  # no gradient to keys
             self._momentum_update_key_encoder()  # update the key encoder
@@ -188,11 +188,11 @@ class IMPaSh(nn.Module):
         k1 = nn.functional.normalize(k1, dim=1)
         k2 = self.k2_mlp(k2)
         k2 = nn.functional.normalize(k2, dim=1)
-        print("**k_size**")
-        print(k1.size())
-        print(k1)
-        print(k2.size())
-        print(k2)
+        #print("**k_size**")
+        #print(k1.size())
+        #print(k1)
+        #print(k2.size())
+        #print(k2)
 
         # undo shuffle
         

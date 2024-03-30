@@ -351,14 +351,14 @@ def main_worker(gpu, ngpus_per_node, args):
             transforms.ToTensor(),
             normalize,
         ]
-        augmentation2 = [
-            transforms.RandomResizedCrop(255, scale=(0.6, 1)),
-            transforms.RandomHorizontalFlip(),
-            impash.loader.PatchShuffling(),
-            #color_transfer,
-            transforms.ToTensor(),
-            normalize,
-        ]
+    augmentation2 = [
+        transforms.RandomResizedCrop(255, scale=(0.6, 1)),
+        transforms.RandomHorizontalFlip(),
+        impash.loader.PatchShuffling(),
+        #color_transfer,
+        transforms.ToTensor(),
+        normalize,
+    ]
   
     train_dataset = datasets.ImageFolder(
         traindir, moco.loader.FourCropsTransform(transforms.Compose(augmentation1,augmentation2))#对同一个数据生成两个不同的版本
@@ -425,17 +425,26 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         # measure data loading time
         data_time.update(time.time() - end)
 
+        #added
+        print("**images.shape:",images.shape())
+        for i in range(0,4):
+            print(images[i].shape())
+        print("**")
         if args.gpu is not None:
             images[0] = images[0].cuda(args.gpu, non_blocking=True)
             images[1] = images[1].cuda(args.gpu, non_blocking=True)
+            images[2] = images[2].cuda(args.gpu, non_blocking=True)
+            images[3] = images[3].cuda(args.gpu, non_blocking=True)
 
         # compute output
-        output, target = model(im_q=images[0], im_k=images[1])# Nx(1+K)
-        loss = criterion(output, target)
+        logits1, logits2, logits3, logits4, labels = model(im_q1=images[0], im_k1=images[1],
+                           im_q2=images[2], im_k2=images[3])# Nx(1+K)
+        loss = (criterion(logits1, labels)+criterion(logits2, labels)+
+                criterion(logits3,labels)+criterion(logits4,labels))
 
         # acc1/acc5 are (K+1)-way contrast classifier accuracy
         # measure accuracy and record loss
-        acc1, acc5 = accuracy(output, target, topk=(1, 5))
+        acc1, acc5 = accuracy(logits1, labels, topk=(1, 5)) #只测量第一分类的精度
         losses.update(loss.item(), images[0].size(0))
         top1.update(acc1[0], images[0].size(0))
         top5.update(acc5[0], images[0].size(0))

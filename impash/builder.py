@@ -211,7 +211,7 @@ class IMPaSh(nn.Module):
         logits4 /= self.T
 
         # labels: positive key indicators
-        labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda()# 将全0标签移动到GPU上，形状是n*1的全0向量
+        labels = torch.zeros(logits1.shape[0], dtype=torch.long).cuda()# 将全0标签移动到GPU上，形状是n*1的全0向量
 
         # dequeue and enqueue
         self._dequeue_and_enqueue(k1,k2)# k is NxC(batch_size x Dim)

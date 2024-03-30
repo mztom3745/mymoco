@@ -93,8 +93,8 @@ class IMPaSh(nn.Module):
         assert ptr1 == ptr2
         
         # replace the keys at ptr (dequeue and enqueue)
-        self.queue1[:, ptr : ptr + batch_size] = k1.T # 必然是整块替换，不会头尾两截
-        self.queue2[:, ptr : ptr + batch_size] = k2.T
+        self.queue1[:, ptr1 : ptr1 + batch_size] = k1.T # 必然是整块替换，不会头尾两截
+        self.queue2[:, ptr2 : ptr2 + batch_size] = k2.T
         
         ptr1 = (ptr1 + batch_size) % self.K  # move pointer
         ptr2 = (ptr2 + batch_size) % self.K

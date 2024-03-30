@@ -28,18 +28,30 @@ class IMPaSh(nn.Module):
 
         # create the encoders
         # num_classes is the output fc dimension
-        self.encoder_q = base_encoder(num_classes=dim)
-        self.encoder_k = base_encoder(num_classes=dim)
+        self.encoder_q = base_encoder()
+        self.encoder_k = base_encoder()
 
-        if mlp:  #添加两个mlp
-            print("using brute-force replacement to add a mlp")
-            dim_mlp = self.encoder_q.fc.weight.shape[1]
-            self.encoder_q.fc = nn.Sequential(
-                nn.Linear(dim_mlp, dim_mlp), nn.ReLU(), self.encoder_q.fc
-            )
-            self.encoder_k.fc = nn.Sequential(
-                nn.Linear(dim_mlp, dim_mlp), nn.ReLU(), self.encoder_k.fc
-            )
+        assert mlp == True
+        self.q1_mlp=nn.Sequential(
+            nn.Linear(2048, 2048),
+            nn.ReLU(),
+            nn.Linear(2048, dim)
+        )
+        self.k1_mlp=nn.Sequential(
+            nn.Linear(2048, 2048),
+            nn.ReLU(),
+            nn.Linear(2048, dim)
+        )
+        self.q2_mlp=nn.Sequential(
+            nn.Linear(2048, 2048),
+            nn.ReLU(),
+            nn.Linear(2048, dim)
+        )
+        self.k2_mlp=nn.Sequential(
+            nn.Linear(2048, 2048),
+            nn.ReLU(),
+            nn.Linear(2048, dim)
+        )
 
         for param_q, param_k in zip(
             self.encoder_q.parameters(), self.encoder_k.parameters()
@@ -78,7 +90,9 @@ class IMPaSh(nn.Module):
         ptr1 = int(self.queue_ptr1)#两者的ptr应该是在一个位置
         ptr2 = int(self.queue_ptr2)
         assert self.K % batch_size == 0  # for simplicity 65536%256 
-
+        #added
+        assert ptr1 == ptr2
+        
         # replace the keys at ptr (dequeue and enqueue)
         self.queue1[:, ptr : ptr + batch_size] = k1.T # 必然是整块替换，不会头尾两截
         self.queue2[:, ptr : ptr + batch_size] = k2.T
@@ -147,8 +161,10 @@ class IMPaSh(nn.Module):
 
         # compute query features
         q1 = self.encoder_q(im_q1)  # queries: NxC
+        q1 = self.q1_mlp(q1)
         q1 = nn.functional.normalize(q1, dim=1) #沿着张量的第一个维度（通常是特征维度的方向）进行归一化
         q2 = self.encoder_q(im_q2)  # queries: NxC
+        q2 = self.q2_mlp(q2)
         q2 = nn.functional.normalize(q2, dim=1)
 
         # compute key features
@@ -161,12 +177,14 @@ class IMPaSh(nn.Module):
 
             k1 = self.encoder_k(im_k1)  # keys: NxC
             k2 = self.encoder_k(im_k2)
-            k1 = nn.functional.normalize(k1, dim=1)
-            k2 = nn.functional.normalize(k2, dim=1)
+        k1 = self.k1_mlp(k1)
+        k1 = nn.functional.normalize(k1, dim=1)
+        k2 = self.k2_mlp(k2)
+        k2 = nn.functional.normalize(k2, dim=1)
 
-            # undo shuffle
-            k1 = self._batch_unshuffle_ddp(k1, idx_unshuffle)
-            k2 = self._batch_unshuffle_ddp(k2, idx_unshuffle)
+        # undo shuffle
+        k1 = self._batch_unshuffle_ddp(k1, idx_unshuffle)
+        k2 = self._batch_unshuffle_ddp(k2, idx_unshuffle)
 
         # compute logits
         # Einstein sum is more intuitive
@@ -175,17 +193,23 @@ class IMPaSh(nn.Module):
         # negative logits: NxK
         l_neg1 = torch.einsum("nc,ck->nk", [q1, self.queue1.clone().detach()]) #做矩阵乘，得到n*k
 
-        # logits: Nx(1+K)
-        logits1 = torch.cat([l_pos1, l_neg1], dim=1)
+        
 
         #same
         l_pos2 = torch.einsum("nc,nc->n", [q1, k1]).unsqueeze(-1)
         l_neg2 = torch.einsum("nc,ck->nk", [q1, self.queue1.clone().detach()])
+        
+        # logits: Nx(1+K)
+        logits1 = torch.cat([l_pos1, l_neg1], dim=1)
         logits2 = torch.cat([l_pos2, l_neg2], dim=1)
-
+        logits3 = torch.cat([l_pos1, l_neg2], dim=1)
+        logits4 = torch.cat([l_pos2, l_neg1], dim=1)
+        
         # apply temperature
         logits1 /= self.T
         logits2 /= self.T
+        logits3 /= self.T
+        logits4 /= self.T
 
         # labels: positive key indicators
         labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda()# 将全0标签移动到GPU上，形状是n*1的全0向量
@@ -193,7 +217,7 @@ class IMPaSh(nn.Module):
         # dequeue and enqueue
         self._dequeue_and_enqueue(k1,k2)# k is NxC(batch_size x Dim)
 
-        return logits1, labels1, logits2, labels2
+        return logits1, logits2, logits3, logits4, labels2
 
 
 # utils

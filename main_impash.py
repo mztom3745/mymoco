@@ -428,8 +428,8 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         print("i:",i)
         #added
         #print("**images.shape**")
-        for i in range(0,4):
-            print(images[i].size())
+        #for i in range(0,4):
+            #print(images[i].size())
         #print("**")
         if args.gpu is not None:
             images[0] = images[0].cuda(args.gpu, non_blocking=True)
@@ -458,8 +458,9 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         # measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
-
+        
         if i % args.print_freq == 0:
+            print("entering_print")
             progress.display(i) #打印信息
 
 

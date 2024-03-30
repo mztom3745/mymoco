@@ -8,16 +8,19 @@ import random
 from PIL import ImageFilter
 
 
-class TwoCropsTransform:
+class FourCropsTransform:
     """Take two random crops of one image as the query and key."""
 
-    def __init__(self, base_transform):
-        self.base_transform = base_transform
+    def __init__(self, base_transform1,base_transform2):
+        self.base_transform1 = base_transform1
+        self.base_transform2 = base_transform2
 
     def __call__(self, x):
-        q = self.base_transform(x)
-        k = self.base_transform(x)
-        return [q, k]
+        q1 = self.base_transform1(x)
+        k1 = self.base_transform1(x)
+        q2 = self.base_transform2(x)
+        k2 = self.base_transform2(x)
+        return [q1, k1, q2, k2]
 
 
 class GaussianBlur:

@@ -361,7 +361,7 @@ def main_worker(gpu, ngpus_per_node, args):
     ]
   
     train_dataset = datasets.ImageFolder(
-        traindir, moco.loader.FourCropsTransform(transforms.Compose(augmentation1,augmentation2))#对同一个数据生成两个不同的版本
+        traindir, impash.loader.FourCropsTransform(transforms.Compose(augmentation1,augmentation2))#对同一个数据生成两个不同的版本
     )
 
     if args.distributed:

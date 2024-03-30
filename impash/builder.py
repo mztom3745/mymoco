@@ -32,22 +32,22 @@ class IMPaSh(nn.Module):
 
         assert mlp == True
         self.q1_mlp=nn.Sequential(
-            nn.Linear(2048, 2048),
+            nn.Linear(dim, 2048),
             nn.ReLU(),
             nn.Linear(2048, dim)
         )
         self.k1_mlp=nn.Sequential(
-            nn.Linear(2048, 2048),
+            nn.Linear(dim, 2048),
             nn.ReLU(),
             nn.Linear(2048, dim)
         )
         self.q2_mlp=nn.Sequential(
-            nn.Linear(2048, 2048),
+            nn.Linear(dim, 2048),
             nn.ReLU(),
             nn.Linear(2048, dim)
         )
         self.k2_mlp=nn.Sequential(
-            nn.Linear(2048, 2048),
+            nn.Linear(dim, 2048),
             nn.ReLU(),
             nn.Linear(2048, dim)
         )
@@ -159,6 +159,7 @@ class IMPaSh(nn.Module):
         """
 
         # compute query features
+        print("**enter_forward**")
         q1 = self.encoder_q(im_q1)  # queries: NxC
         q1 = self.q1_mlp(q1)
         q1 = nn.functional.normalize(q1, dim=1) #沿着张量的第一个维度（通常是特征维度的方向）进行归一化
@@ -195,8 +196,8 @@ class IMPaSh(nn.Module):
         
 
         #same
-        l_pos2 = torch.einsum("nc,nc->n", [q1, k1]).unsqueeze(-1)
-        l_neg2 = torch.einsum("nc,ck->nk", [q1, self.queue1.clone().detach()])
+        l_pos2 = torch.einsum("nc,nc->n", [q2, k2]).unsqueeze(-1)
+        l_neg2 = torch.einsum("nc,ck->nk", [q2, self.queue2.clone().detach()])
         
         # logits: Nx(1+K)
         logits1 = torch.cat([l_pos1, l_neg1], dim=1)

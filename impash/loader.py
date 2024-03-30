@@ -64,7 +64,7 @@ class PatchShuffling:
         for i in range(self.n_grid * self.n_grid):
             crops.append(img[self.xx[i] + r_x[i]: self.xx[i] + r_x[i] + self.crop_size,
                          self.yy[i] + r_y[i]: self.yy[i] + r_y[i] + self.crop_size, :])
-        shuffle(crops)
+        random.shuffle(crops)
 
         shuffling_img = np.zeros([self.crop_size*self.n_grid, self.crop_size*self.n_grid, 3], dtype='uint8')
         for i in range(self.n_grid * self.n_grid):

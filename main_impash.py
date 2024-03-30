@@ -427,7 +427,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         data_time.update(time.time() - end)
 
         #added
-        print("**images.shape:",images.shape())
+        print("**images.shape**")
         for i in range(0,4):
             print(images[i].shape())
         print("**")

@@ -161,16 +161,17 @@ class MoCo(nn.Module):
 
         # logits: Nx(1+K)
         logits = torch.cat([l_pos, l_neg], dim=1)
-
+        
         # apply temperature
         logits /= self.T
-
+        
         # labels: positive key indicators
         labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda()# 将全0标签移动到GPU上，形状是n*1的全0向量
-
+        
         # dequeue and enqueue
         self._dequeue_and_enqueue(k)# k is NxC(batch_size x Dim)
-
+        print("logits:",logits)
+        print("labels:",labels)
         return logits, labels
 
 

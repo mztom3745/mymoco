@@ -467,10 +467,10 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         #added
         if args.train_accfile!="" and args.gpu == 0:
             with open(args.train_accfile,"a") as f:
-                f.write(f"{epoch} {top1a.val:.3f} {top1a.avg:.3f}
-                {top1b.val:.3f} {top1b.avg:.3f} 
-                {top1c.val:.3f} {top1c.avg:.3f} 
-                {top1d.val:.3f} {top1d.avg:.3f}\n")
+                f.write(f"{epoch} {top1a.val:.3f} {top1a.avg:.3f} ")
+                f.write(f"{top1b.val:.3f} {top1b.avg:.3f} ")
+                f.write(f"{top1c.val:.3f} {top1c.avg:.3f} ")
+                f.write(f"{top1d.val:.3f} {top1d.avg:.3f}\n")
                 
         # compute gradient and do SGD step
         optimizer.zero_grad()

@@ -174,7 +174,7 @@ class IMPaSh(nn.Module):
         q2 = self.encoder_q(im_q2)  # queries: NxC
         q2 = self.q2_mlp(q2)
         q2 = nn.functional.normalize(q2, dim=1)
-        #print("**q_size**")
+        print("**q**")
         #print(q1.size())
         #print(q1)
         #print(q2.size())
@@ -184,8 +184,8 @@ class IMPaSh(nn.Module):
             self._momentum_update_key_encoder()  # update the key encoder
 
             # shuffle for making use of BN
-            im_k1, idx_unshuffle = self._batch_shuffle_ddp(im_k1)#收集所有k
-            im_k2, idx_unshuffle = self._batch_shuffle_ddp(im_k2)
+            im_k1, idx_unshuffle1 = self._batch_shuffle_ddp(im_k1)#收集所有k
+            im_k2, idx_unshuffle2 = self._batch_shuffle_ddp(im_k2)
 
             k1 = self.encoder_k(im_k1)  # keys: NxC
             k2 = self.encoder_k(im_k2)
@@ -193,17 +193,12 @@ class IMPaSh(nn.Module):
             k2 = self.k2_mlp(k2)
             k1 = nn.functional.normalize(k1, dim=1)
             k2 = nn.functional.normalize(k2, dim=1)
-            k1 = self._batch_unshuffle_ddp(k1, idx_unshuffle)
-            k2 = self._batch_unshuffle_ddp(k2, idx_unshuffle)
+            k1 = self._batch_unshuffle_ddp(k1, idx_unshuffle1)
+            k2 = self._batch_unshuffle_ddp(k2, idx_unshuffle2)
         
-        #print("**k_size**")
-        #print(k1.size())
-        #print(k1)
-        #print(k2.size())
-        #print(k2)
-
-        # undo shuffle
-        
+        print("**k**")
+        print("k1:",k1)
+        print("k2:",k2)
 
         # compute logits
         # Einstein sum is more intuitive
@@ -213,7 +208,6 @@ class IMPaSh(nn.Module):
         l_neg1 = torch.einsum("nc,ck->nk", [q1, self.queue1.clone().detach()]) #做矩阵乘，得到n*k
 
         
-
         #same
         l_pos2 = torch.einsum("nc,nc->n", [q2, k2]).unsqueeze(-1)
         l_neg2 = torch.einsum("nc,ck->nk", [q2, self.queue2.clone().detach()])
@@ -230,12 +224,17 @@ class IMPaSh(nn.Module):
         logits3 /= self.T
         logits4 /= self.T
 
+        print("**logits**")
+        print("logits1:",logits1)
+        print("logits2:",logits2)
+        print("logits3:",logits3)
+        print("logits4:",logits4)
         # labels: positive key indicators
         labels = torch.zeros(logits1.shape[0], dtype=torch.long).cuda()# 将全0标签移动到GPU上，形状是n*1的全0向量
 
         # dequeue and enqueue
         self._dequeue_and_enqueue(k1,k2)# k is NxC(batch_size x Dim)
-
+        
         return logits1, logits2, logits3, logits4, labels
 
 

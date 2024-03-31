@@ -454,18 +454,21 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
                 criterion(logits3,labels)+criterion(logits4,labels))
         
         # measure accuracy and record loss
-        acc1a = accuracy(logits1, labels) #只测量第一分类的精度
-        acc1b = accuracy(logits2, labels)
-        acc1c = accuracy(logits3, labels)
-        acc1d = accuracy(logits4, labels)
+        acc1a = accuracy(logits1, labels, (1,)) #只测量第一分类的精度
+        acc1b = accuracy(logits2, labels, (1,))
+        acc1c = accuracy(logits3, labels, (1,))
+        acc1d = accuracy(logits4, labels, (1,))
         losses.update(loss.item(), images[0].size(0))
         top1a.update(acc1a[0], images[0].size(0))
         top1b.update(acc1b[0], images[0].size(0))
         top1c.update(acc1c[0], images[0].size(0))
         top1d.update(acc1d[0], images[0].size(0))
         print("testing")
+        print(logits1.size())
+        print(logits1)
         print(acc1a[0])
         print(top1a.avg)
+        print("over")
 
         #added
         if args.train_accfile!="" and args.gpu == 0:

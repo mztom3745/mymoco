@@ -77,7 +77,15 @@ class IMPaSh(nn.Module):
             self.encoder_q.parameters(), self.encoder_k.parameters()
         ):
             param_k.data = param_k.data * self.m + param_q.data * (1.0 - self.m)
-
+        for param_p1, param_k1m in zip(
+            self.q1_mlp.parameters(), self.k1_mlp.parameters()
+        ):
+            param_k1m.data = param_k1m.data * self.m + param_p1.data * (1.0 - self.m)
+        for param_p2, param_k2m in zip(
+            self.q2_mlp.parameters(), self.k2_mlp.parameters()
+        ):
+            param_k2m.data = param_k2m.data * self.m + param_p2.data * (1.0 - self.m)
+            
     @torch.no_grad()
     def _dequeue_and_enqueue(self, k1, k2):
         # gather keys before updating queue

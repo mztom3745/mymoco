@@ -439,8 +439,9 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         # measure accuracy and record loss
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
         print("acc1.type:"acc1[0].type())
+        print("acc1:",acc1)
         losses.update(loss.item(), images[0].size(0))
-        top1.update(acc1[0], images[0].size(0))
+        top1.update(acc1[0].item(), images[0].size(0))
         top5.update(acc5[0], images[0].size(0))
         #print("testing")
         #print(top1.val)

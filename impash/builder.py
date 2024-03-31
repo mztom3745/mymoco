@@ -187,9 +187,9 @@ class IMPaSh(nn.Module):
         q2 = nn.functional.normalize(q2, dim=1)
         print("**q**")
         print(q1.size())
-        print("q1:",q1)
+        #print("q1:",q1)
         #print(q2.size())
-        print("q2:",q2)
+        #print("q2:",q2)
         # compute key features
         with torch.no_grad():  # no gradient to keys
             self._momentum_update_key_encoder()  # update the key encoder
@@ -207,27 +207,28 @@ class IMPaSh(nn.Module):
             k1 = self._batch_unshuffle_ddp(k1, idx_unshuffle1)
             k2 = self._batch_unshuffle_ddp(k2, idx_unshuffle2)
         
-        print("**k**")
-        print("k1:",k1)
-        print("k2:",k2)
-
         # compute logits
         # Einstein sum is more intuitive
         # positive logits: Nx1
         l_pos1 = torch.einsum("nc,nc->n", [q1, k1]).unsqueeze(-1)#做点积，得到n*1
         # negative logits: NxK
         l_neg1 = torch.einsum("nc,ck->nk", [q1, self.queue1.clone().detach()]) #做矩阵乘，得到n*k
-
+        print("l_pos1:",l_pos1)
+        print("l_neg1:",l_neg1)
         
         #same
         l_pos2 = torch.einsum("nc,nc->n", [q2, k2]).unsqueeze(-1)
         l_neg2 = torch.einsum("nc,ck->nk", [q2, self.queue2.clone().detach()])
+        l_pos3 = torch.einsum("nc,nc->n", [q2, k1]).unsqueeze(-1)
+        l_neg3 = torch.einsum("nc,ck->nk", [q2, self.queue1.clone().detach()])
+        l_pos4 = torch.einsum("nc,nc->n", [q1, k2]).unsqueeze(-1)
+        l_neg4 = torch.einsum("nc,ck->nk", [q1, self.queue2.clone().detach()])
         
         # logits: Nx(1+K)
         logits1 = torch.cat([l_pos1, l_neg1], dim=1)
         logits2 = torch.cat([l_pos2, l_neg2], dim=1)
-        logits3 = torch.cat([l_pos1, l_neg2], dim=1)
-        logits4 = torch.cat([l_pos2, l_neg1], dim=1)
+        logits3 = torch.cat([l_pos3, l_neg3], dim=1)
+        logits4 = torch.cat([l_pos4, l_neg4], dim=1)
         
         # apply temperature
         logits1 /= self.T

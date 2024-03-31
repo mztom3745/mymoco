@@ -62,10 +62,12 @@ class IMPaSh(nn.Module):
             self.q1_mlp.parameters(), self.k1_mlp.parameters()
         ):
             param_k1m.data.copy_(param_p1.data)
+            param_k1m.requires_grad = False
         for param_p2, param_k2m in zip(
             self.q2_mlp.parameters(), self.k2_mlp.parameters()
         ):
             param_k2m.data.copy_(param_p2.data)
+            param_k2m.requires_grad = False
 
         # create the queue
         self.register_buffer("queue1", torch.randn(dim, K))#　128x65536

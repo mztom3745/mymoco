@@ -57,6 +57,10 @@ class IMPaSh(nn.Module):
         ):
             param_k.data.copy_(param_q.data)  # initialize
             param_k.requires_grad = False  # not update by gradient
+        for param_p1, param_p2 in zip(
+            self.q1_mlp.parameters(), self.q2_mlp.parameters()
+        ):
+            param_p2.data.copy_(param_p1.data)#先让两个投影头的权重一致
 
         for param_p1, param_k1m in zip(
             self.q1_mlp.parameters(), self.k1_mlp.parameters()
@@ -68,6 +72,7 @@ class IMPaSh(nn.Module):
         ):
             param_k2m.data.copy_(param_p2.data)
             param_k2m.requires_grad = False
+        
 
         # create the queue
         self.register_buffer("queue1", torch.randn(dim, K))#　128x65536
@@ -184,9 +189,8 @@ class IMPaSh(nn.Module):
         q1 = nn.functional.normalize(q1, dim=1) #沿着张量的第一个维度（通常是特征维度的方向）进行归一化
         q2 = self.encoder_q(im_q2)  # queries: NxC
         q2 = self.q2_mlp(q2)
-        q2 = nn.functional.normalize(q2, dim=1)
-        print("**q**")
-        print(q1.size())
+        q2 = nn.functional.normalize(q2, dim=1)# N是分到每个GPU的batch_size
+
         
         # compute key features
         with torch.no_grad():  # no gradient to keys
@@ -204,6 +208,9 @@ class IMPaSh(nn.Module):
             k2 = nn.functional.normalize(k2, dim=1)
             k1 = self._batch_unshuffle_ddp(k1, idx_unshuffle1)
             k2 = self._batch_unshuffle_ddp(k2, idx_unshuffle2)
+        print("**q2k2**")
+        print("q2:",q2)
+        print("k2:",k2)
         
         # compute logits
         # Einstein sum is more intuitive
@@ -211,8 +218,8 @@ class IMPaSh(nn.Module):
         l_pos1 = torch.einsum("nc,nc->n", [q1, k1]).unsqueeze(-1)#做点积，得到n*1
         # negative logits: NxK
         l_neg1 = torch.einsum("nc,ck->nk", [q1, self.queue1.clone().detach()]) #做矩阵乘，得到n*k
-        print("l_pos1:",l_pos1)
-        print("l_neg1:",l_neg1)
+        print("l_pos2:",l_pos2)
+        print("l_neg2:",l_neg2)
         
         #same
         l_pos2 = torch.einsum("nc,nc->n", [q2, k2]).unsqueeze(-1)

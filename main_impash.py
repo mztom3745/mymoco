@@ -466,7 +466,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         print("testing")
         print(logits1.size())
         print(logits1)
-        pringt(labels)
+        print(labels)
         print(acc1a[0])
         print(top1a.avg)
         print("over")

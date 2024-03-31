@@ -418,11 +418,13 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
     batch_time = AverageMeter("Time", ":6.3f")
     data_time = AverageMeter("Data", ":6.3f")
     losses = AverageMeter("Loss", ":.4e")
-    top1 = AverageMeter("Acc@1", ":6.2f")
-    top5 = AverageMeter("Acc@5", ":6.2f")
+    top1a = AverageMeter("Acc@a", ":6.2f")
+    top1b = AverageMeter("Acc@b", ":6.2f")
+    top1c = AverageMeter("Acc@c", ":6.2f")
+    top1d = AverageMeter("Acc@d", ":6.2f")
     progress = ProgressMeter(
         len(train_loader),
-        [batch_time, data_time, losses, top1, top5],
+        [batch_time, data_time, losses, topa, topb, topc, topd],
         prefix="Epoch: [{}]".format(epoch),
     )
 
@@ -451,17 +453,24 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         loss = (criterion(logits1,labels)+criterion(logits2,labels)+
                 criterion(logits3,labels)+criterion(logits4,labels))
         
-        # acc1/acc5 are (K+1)-way contrast classifier accuracy
         # measure accuracy and record loss
-        acc1, acc5 = accuracy(logits1, labels, topk=(1, 5)) #只测量第一分类的精度
+        acc1a = accuracy(logits1, labels) #只测量第一分类的精度
+        acc1b = accuracy(logits2, labels)
+        acc1c = accuracy(logits3, labels)
+        acc1d = accuracy(logits3, labels)
         losses.update(loss.item(), images[0].size(0))
-        top1.update(acc1[0], images[0].size(0))
-        top5.update(acc5[0], images[0].size(0))
+        top1a.update(acc1a[0], images[0].size(0))
+        top1b.update(acc1a[0], images[0].size(0))
+        top1c.update(acc1a[0], images[0].size(0))
+        top1d.update(acc1a[0], images[0].size(0))
 
         #added
         if args.train_accfile!="" and args.gpu == 0:
             with open(args.train_accfile,"a") as f:
-                f.write(f"{epoch} {top1.val:.3f} {top1.avg:.3f}\n")
+                f.write(f"{epoch} {top1a.val:.3f} {top1a.avg:.3f}
+                {top1b.val:.3f} {top1b.avg:.3f} 
+                {top1c.val:.3f} {top1c.avg:.3f} 
+                {top1d.val:.3f} {top1d.avg:.3f}\n")
                 
         # compute gradient and do SGD step
         optimizer.zero_grad()

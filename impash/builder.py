@@ -208,9 +208,7 @@ class IMPaSh(nn.Module):
             k2 = nn.functional.normalize(k2, dim=1)
             k1 = self._batch_unshuffle_ddp(k1, idx_unshuffle1)
             k2 = self._batch_unshuffle_ddp(k2, idx_unshuffle2)
-        print("**q2k2**")
-        print("q2:",q2)
-        print("k2:",k2)
+        
         
         # compute logits
         # Einstein sum is more intuitive
@@ -218,8 +216,7 @@ class IMPaSh(nn.Module):
         l_pos1 = torch.einsum("nc,nc->n", [q1, k1]).unsqueeze(-1)#做点积，得到n*1
         # negative logits: NxK
         l_neg1 = torch.einsum("nc,ck->nk", [q1, self.queue1.clone().detach()]) #做矩阵乘，得到n*k
-        print("l_pos2:",l_pos2)
-        print("l_neg2:",l_neg2)
+        
         
         #same
         l_pos2 = torch.einsum("nc,nc->n", [q2, k2]).unsqueeze(-1)
@@ -240,7 +237,12 @@ class IMPaSh(nn.Module):
         logits2 /= self.T
         logits3 /= self.T
         logits4 /= self.T
-
+        print("**q2k2**")
+        print("q2:",q2)
+        print("k2:",k2)
+        print("l_pos2:",l_pos2)
+        print("l_neg2:",l_neg2)
+        
         print("**logits**")
         print("logits1:",logits1)
         print("logits2:",logits2)

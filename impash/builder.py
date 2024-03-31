@@ -237,6 +237,8 @@ class IMPaSh(nn.Module):
         logits2 /= self.T
         logits3 /= self.T
         logits4 /= self.T
+        #print
+        '''
         print("**q2k2**")
         print("q2:",q2)
         print("k2:",k2)
@@ -248,6 +250,7 @@ class IMPaSh(nn.Module):
         print("logits2:",logits2)
         print("logits3:",logits3)
         print("logits4:",logits4)
+        '''
         # labels: positive key indicators
         labels = torch.zeros(logits1.shape[0], dtype=torch.long).cuda()# 将全0标签移动到GPU上，形状是n*1的全0向量
 

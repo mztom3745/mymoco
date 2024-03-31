@@ -181,13 +181,13 @@ class IMPaSh(nn.Module):
 
             k1 = self.encoder_k(im_k1)  # keys: NxC
             k2 = self.encoder_k(im_k2)
+            k1 = self.k1_mlp(k1)
+            k2 = self.k2_mlp(k2)
+            k1 = nn.functional.normalize(k1, dim=1)
+            k2 = nn.functional.normalize(k2, dim=1)
             k1 = self._batch_unshuffle_ddp(k1, idx_unshuffle)
             k2 = self._batch_unshuffle_ddp(k2, idx_unshuffle)
         
-        k1 = self.k1_mlp(k1)
-        k1 = nn.functional.normalize(k1, dim=1)
-        k2 = self.k2_mlp(k2)
-        k2 = nn.functional.normalize(k2, dim=1)
         #print("**k_size**")
         #print(k1.size())
         #print(k1)

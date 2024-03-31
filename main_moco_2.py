@@ -441,9 +441,9 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         losses.update(loss.item(), images[0].size(0))
         top1.update(acc1[0], images[0].size(0))
         top5.update(acc5[0], images[0].size(0))
-        print("testing")
-        print(top1.val)
-        print(top1.avg)
+        #print("testing")
+        #print(top1.val)
+        #print(top1.avg)
 
         #added
         if args.train_accfile!="" and args.gpu == 0:

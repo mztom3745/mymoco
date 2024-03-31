@@ -459,10 +459,10 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         acc1c = accuracy(logits3, labels, (1,))
         acc1d = accuracy(logits4, labels, (1,))
         losses.update(loss.item(), images[0].size(0))
-        top1a.update(acc1a[0], images[0].size(0))
-        top1b.update(acc1b[0], images[0].size(0))
-        top1c.update(acc1c[0], images[0].size(0))
-        top1d.update(acc1d[0], images[0].size(0))
+        top1a.update(acc1a[0].item(), images[0].size(0))
+        top1b.update(acc1b[0].item(), images[0].size(0))
+        top1c.update(acc1c[0].item(), images[0].size(0))
+        top1d.update(acc1d[0].item(), images[0].size(0))
         print("testing:",i,"epoch: ",epoch)
         print("logits1.size:",logits1.size())
         print("logits1:",logits1)
@@ -474,10 +474,10 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         #added
         if args.train_accfile!="" and args.gpu == 0:
             with open(args.train_accfile,"a") as f:
-                f.write(f"{epoch} {acc1a[0].item():.3f} {top1a.avg.item():.3f} ")
-                f.write(f"{acc1b[0].item():.3f} {top1b.avg.item():.3f} ")
-                f.write(f"{acc1c[0].item():.3f} {top1c.avg.item():.3f} ")
-                f.write(f"{acc1d[0].item():.3f} {top1d.avg.item():.3f}\n")
+                f.write(f"{epoch} {acc1a[0]:.3f} {top1a.avg:.3f} ")
+                f.write(f"{acc1b[0]:.3f} {top1b.avg:.3f} ")
+                f.write(f"{acc1c[0]:.3f} {top1c.avg:.3f} ")
+                f.write(f"{acc1d[0]:.3f} {top1d.avg:.3f}\n")
                 
         # compute gradient and do SGD step
         optimizer.zero_grad()

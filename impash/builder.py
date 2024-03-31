@@ -58,6 +58,15 @@ class IMPaSh(nn.Module):
             param_k.data.copy_(param_q.data)  # initialize
             param_k.requires_grad = False  # not update by gradient
 
+        for param_p1, param_k1m in zip(
+            self.q1_mlp.parameters(), self.k1_mlp.parameters()
+        ):
+            param_k1m.data.copy_(param_p1.data)
+        for param_p2, param_k2m in zip(
+            self.q2_mlp.parameters(), self.k2_mlp.parameters()
+        ):
+            param_k2m.data.copy_(param_p2.data)
+
         # create the queue
         self.register_buffer("queue1", torch.randn(dim, K))#　128x65536
         self.queue1 = nn.functional.normalize(self.queue1, dim=0)# 每个128维的负样本的L2范数都是1

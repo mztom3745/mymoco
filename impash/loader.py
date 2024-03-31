@@ -43,7 +43,7 @@ class PatchShuffling:
     3st setting n_grid=3, img_size=224, crop_size=64
 
     """
-    def __init__(self, n_grid=3, img_size=255, crop_size=64):
+    def __init__(self, n_grid=3, img_size=255, crop_size=75):
         self.n_grid = n_grid
         self.img_size = img_size
         self.crop_size = crop_size

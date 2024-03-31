@@ -187,9 +187,7 @@ class IMPaSh(nn.Module):
         q2 = nn.functional.normalize(q2, dim=1)
         print("**q**")
         print(q1.size())
-        #print("q1:",q1)
-        #print(q2.size())
-        #print("q2:",q2)
+        
         # compute key features
         with torch.no_grad():  # no gradient to keys
             self._momentum_update_key_encoder()  # update the key encoder

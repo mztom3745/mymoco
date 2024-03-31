@@ -424,7 +424,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
     top1d = AverageMeter("Acc@d", ":6.2f")
     progress = ProgressMeter(
         len(train_loader),
-        [batch_time, data_time, losses, topa, topb, topc, topd],
+        [batch_time, data_time, losses, top1a, top1b, top1c, top1d],
         prefix="Epoch: [{}]".format(epoch),
     )
 

@@ -470,7 +470,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         #print(acc1a[0])
         #print(top1a.avg)
         print("acc1a:",acc1a)
-        print("acc1a.item:"acc1a[0].item())
+        print("acc1a.item:",acc1a[0].item())
         print("size:",images[0].size(0))
         print(top1a)
         #print("over")

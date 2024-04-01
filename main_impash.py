@@ -475,9 +475,9 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         print(top1a)
         #print("over")
         #added
-        if args.train_accfile!="" and args.gpu == 0 and i == 0:
+        if args.train_accfile!="" and args.gpu == 0 and i % args.print_freq == 0:
             with open(args.train_accfile,"a") as f:
-                f.write(f"{epoch} {acc1a[0].item():.3f} {top1a.avg:.3f} ")
+                f.write(f"{epoch} {i} {acc1a[0].item():.3f} {top1a.avg:.3f} ")
                 f.write(f"{acc1b[0].item():.3f} {top1b.avg:.3f} ")
                 f.write(f"{acc1c[0].item():.3f} {top1c.avg:.3f} ")
                 f.write(f"{acc1d[0].item():.3f} {top1d.avg:.3f}\n")

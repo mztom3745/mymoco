@@ -463,14 +463,17 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         top1b.update(acc1b[0].item(), images[0].size(0))
         top1c.update(acc1c[0].item(), images[0].size(0))
         top1d.update(acc1d[0].item(), images[0].size(0))
-        #print("testing:",i,"epoch: ",epoch)
+        print("testing:",i,"epoch: ",epoch)
         #print("logits1.size:",logits1.size())
         #print("logits1:",logits1)
         #print(labels)
         #print(acc1a[0])
         #print(top1a.avg)
+        print("acc1a:",acc1a)
+        print("acc1a.item:"acc1a[0].item())
+        print("size:",images[0].size(0))
+        print(top1a)
         #print("over")
-
         #added
         if args.train_accfile!="" and args.gpu == 0 and i == 0:
             with open(args.train_accfile,"a") as f:
@@ -512,7 +515,7 @@ class AverageMeter:
         self.sum = 0
         self.count = 0
 
-    def update(self, val, n=1):# n为维度
+    def update(self, val, n=1):# n为batch_size大小
         self.val = val
         self.sum += val * n
         self.count += n

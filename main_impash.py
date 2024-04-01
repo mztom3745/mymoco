@@ -410,7 +410,7 @@ def main_worker(gpu, ngpus_per_node, args):
                     "optimizer": optimizer.state_dict(),
                 },
                 is_best=False,
-                filename="checkpoint_{:04d}.pth.tar".format(epoch),
+                filename="impash_checkpoint_{:04d}.pth.tar".format(epoch),
             )
 
 

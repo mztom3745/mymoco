@@ -182,6 +182,9 @@ parser.add_argument("--cos", action="store_true", help="use cosine lr schedule")
 parser.add_argument(
     "--train_accfile",default="", type=str, help="存放train_acc结果"
 )
+parser.add_argument(
+    "--train_output",default="", type=str, help="存放打印结果"
+)
 
 def main():
     args = parser.parse_args()
@@ -387,6 +390,9 @@ def main_worker(gpu, ngpus_per_node, args):
     if args.train_accfile!="" and args.gpu == 0:
         with open(args.train_accfile,"w") as f: #清空
             f.write("")
+    if args.train_output!="" and args.gpu == 0:
+        with open(args.train_output,"w") as f: #清空
+            f.write("")
             
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
@@ -469,15 +475,22 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         #print(labels)
         #print(acc1a[0])
         #print(top1a.avg)
-        print("acc1a:",acc1a)
-        print("acc1a.item:",acc1a[0].item())
-        print("size:",images[0].size(0))
-        print(top1a)
+        #print("acc1a:",acc1a)
+        #print("acc1a.item:",acc1a[0].item())
+        #print("size:",images[0].size(0))
+        #print(top1a)
         #print("over")
         #added
-        if args.train_accfile!="" and args.gpu == 0 and i % args.print_freq == 0:
-            with open(args.train_accfile,"a") as f:
+        if args.train_output!="" and args.gpu == 0 and i % args.print_freq == 0:
+            with open(args.train_output,"a") as f:
                 f.write(f"{epoch} {i} {acc1a[0].item():.3f} {top1a.avg:.3f} ")
+                f.write(f"{acc1b[0].item():.3f} {top1b.avg:.3f} ")
+                f.write(f"{acc1c[0].item():.3f} {top1c.avg:.3f} ")
+                f.write(f"{acc1d[0].item():.3f} {top1d.avg:.3f}\n")
+        
+        if args.train_output!="" and args.gpu == 0 and i == len(train_loader)-1:
+            with open(args.train_output,"a") as f:
+                f.write(f"{epoch} {acc1a[0].item():.3f} {top1a.avg:.3f} ")
                 f.write(f"{acc1b[0].item():.3f} {top1b.avg:.3f} ")
                 f.write(f"{acc1c[0].item():.3f} {top1c.avg:.3f} ")
                 f.write(f"{acc1d[0].item():.3f} {top1d.avg:.3f}\n")

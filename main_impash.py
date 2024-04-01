@@ -480,7 +480,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         #print("acc1a.item:",acc1a[0].item())
         #print("size:",images[0].size(0))
         #print(top1a)
-        print("over")
+        #print("over")
         #added
         if args.train_output!="" and args.gpu == 0 and i % args.print_freq == 0:
             with open(args.train_output,"a") as f:

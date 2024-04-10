@@ -142,12 +142,12 @@ def main_worker(gpu, ngpus_per_node, args):
         builtins.print = print_pass
 
     if args.gpu is not None:
-        print("Use GPU: {} for training--".format(args.gpu))
+        print("Use GPU: {} for training".format(args.gpu))
 
     if args.distributed:
         if args.dist_url == "env://" and args.rank == -1:
             args.rank = int(os.environ["RANK"])
-            print("rank1:",args.rank)
+            print("rank1:",args.rank)#不进入，因为是同机器训练
         if args.multiprocessing_distributed:
             # For multiprocessing distributed training, rank needs to be the
             # global rank among all the processes
@@ -171,7 +171,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
     if args.distributed:
         # Apply SyncBN
-        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+        # model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         print("syncBN done")
         # For multiprocessing distributed, DistributedDataParallel constructor
         # should always set the single device scope, otherwise,

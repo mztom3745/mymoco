@@ -23,7 +23,7 @@ class SimSiam(nn.Module):
         # num_classes is the output fc dimension, zero-initialize last BNs
         self.encoder = base_encoder(num_classes=dim, zero_init_residual=True)
 
-        # build a 3-layer projector
+        # build a 3-layer projector _投影头：projection mlp 
         prev_dim = self.encoder.fc.weight.shape[1]
         self.encoder.fc = nn.Sequential(nn.Linear(prev_dim, prev_dim, bias=False),
                                         nn.BatchNorm1d(prev_dim),
@@ -35,7 +35,7 @@ class SimSiam(nn.Module):
                                         nn.BatchNorm1d(dim, affine=False)) # output layer
         self.encoder.fc[6].bias.requires_grad = False # hack: not use bias as it is followed by BN
 
-        # build a 2-layer predictor
+        # build a 2-layer predictor _预测头：prediciton mlp
         self.predictor = nn.Sequential(nn.Linear(dim, pred_dim, bias=False),
                                         nn.BatchNorm1d(pred_dim),
                                         nn.ReLU(inplace=True), # hidden layer

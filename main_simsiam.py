@@ -126,6 +126,7 @@ def main():
         args.world_size = ngpus_per_node * args.world_size
         # Use torch.multiprocessing.spawn to launch distributed processes: the
         # main_worker process function
+        print("in it!")
         mp.spawn(main_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, args))
     else:
         # Simply call main_worker function
@@ -171,7 +172,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
     if args.distributed:
         # Apply SyncBN
-        # model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         print("syncBN done")
         # For multiprocessing distributed, DistributedDataParallel constructor
         # should always set the single device scope, otherwise,

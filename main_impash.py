@@ -164,7 +164,7 @@ def main_worker(gpu, ngpus_per_node, args):
     model = simsiam.builder.SimSiam(
         models.__dict__[args.arch],
         args.dim, args.pred_dim)
-    print("model created")
+    print("model created!")
     
     # infer learning rate before changing batch size
     init_lr = args.lr * args.batch_size / 256

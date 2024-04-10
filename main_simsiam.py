@@ -126,7 +126,6 @@ def main():
         args.world_size = ngpus_per_node * args.world_size
         # Use torch.multiprocessing.spawn to launch distributed processes: the
         # main_worker process function
-        print("in it!")
         mp.spawn(main_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, args))
     else:
         # Simply call main_worker function
@@ -135,7 +134,7 @@ def main():
 
 def main_worker(gpu, ngpus_per_node, args):
     args.gpu = gpu
-
+    print("gpu:",gpu)
     # suppress printing if not master
     if args.multiprocessing_distributed and args.gpu != 0:
         def print_pass(*args):
@@ -158,8 +157,9 @@ def main_worker(gpu, ngpus_per_node, args):
             backend=args.dist_backend, 
             init_method=args.dist_url,
             world_size=args.world_size, 
-            rank=args.rank)
-        torch.distributed.barrier()
+            rank=args.rank
+        )
+        # torch.distributed.barrier()
     # create model
     print("=> creating model '{}'".format(args.arch))
     model = simsiam.builder.SimSiam(

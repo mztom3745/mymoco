@@ -159,7 +159,7 @@ def main_worker(gpu, ngpus_per_node, args):
             world_size=args.world_size, 
             rank=args.rank
         )
-        # torch.distributed.barrier()
+        # torch.distributed.barrier() #deleted
     # create model
     print("=> creating model '{}'".format(args.arch))
     model = simsiam.builder.SimSiam(

@@ -44,7 +44,7 @@ parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet50',
                         ' (default: resnet50)')
 parser.add_argument('-j', '--workers', default=32, type=int, metavar='N',
                     help='number of data loading workers (default: 32)')
-parser.add_argument('--epochs', default=100, type=int, metavar='N',
+parser.add_argument('--epochs', default=200, type=int, metavar='N',#change to 200
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
@@ -89,6 +89,11 @@ parser.add_argument('--pred-dim', default=512, type=int,
                     help='hidden dimension of the predictor (default: 512)')
 parser.add_argument('--fix-pred-lr', action='store_true',
                     help='Fix learning rate for the predictor')
+#added
+parser.add_argument(
+    "--train_accfile",default="", type=str, help="存放train_acc结果"
+)
+
 
 def main():
     args = parser.parse_args()
@@ -109,10 +114,12 @@ def main():
 
     if args.dist_url == "env://" and args.world_size == -1:
         args.world_size = int(os.environ["WORLD_SIZE"])
+        print("args.world_size:",args.world_size)
 
     args.distributed = args.world_size > 1 or args.multiprocessing_distributed
 
     ngpus_per_node = torch.cuda.device_count()
+    print("ngpus_per_node:",ngpus_per_node)
     if args.multiprocessing_distributed:
         # Since we have ngpus_per_node processes per node, the total world_size
         # needs to be adjusted accordingly
@@ -135,30 +142,37 @@ def main_worker(gpu, ngpus_per_node, args):
         builtins.print = print_pass
 
     if args.gpu is not None:
-        print("Use GPU: {} for training".format(args.gpu))
+        print("Use GPU: {} for training--".format(args.gpu))
 
     if args.distributed:
         if args.dist_url == "env://" and args.rank == -1:
             args.rank = int(os.environ["RANK"])
+            print("rank1:",args.rank)
         if args.multiprocessing_distributed:
             # For multiprocessing distributed training, rank needs to be the
             # global rank among all the processes
             args.rank = args.rank * ngpus_per_node + gpu
-        dist.init_process_group(backend=args.dist_backend, init_method=args.dist_url,
-                                world_size=args.world_size, rank=args.rank)
+             print("rank2:",args.rank)
+        dist.init_process_group(
+            backend=args.dist_backend, 
+            init_method=args.dist_url,
+            world_size=args.world_size, 
+            rank=args.rank)
         torch.distributed.barrier()
     # create model
     print("=> creating model '{}'".format(args.arch))
     model = simsiam.builder.SimSiam(
         models.__dict__[args.arch],
         args.dim, args.pred_dim)
-
+    print("model created!")
+    
     # infer learning rate before changing batch size
     init_lr = args.lr * args.batch_size / 256
 
     if args.distributed:
         # Apply SyncBN
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+        print("syncBN done")
         # For multiprocessing distributed, DistributedDataParallel constructor
         # should always set the single device scope, otherwise,
         # DistributedDataParallel will use all available devices.
@@ -170,7 +184,10 @@ def main_worker(gpu, ngpus_per_node, args):
             # ourselves based on the total number of GPUs we have
             args.batch_size = int(args.batch_size / ngpus_per_node)
             args.workers = int((args.workers + ngpus_per_node - 1) / ngpus_per_node)
-            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
+            print("workers:",args.workers)
+            model = torch.nn.parallel.DistributedDataParallel(
+                model, device_ids=[args.gpu]
+            )
         else:
             model.cuda()
             # DistributedDataParallel will divide and allocate batch_size to all
@@ -237,7 +254,7 @@ def main_worker(gpu, ngpus_per_node, args):
         transforms.ToTensor(),
         normalize
     ]
-
+    
     train_dataset = datasets.ImageFolder(
         traindir,
         simsiam.loader.TwoCropsTransform(transforms.Compose(augmentation)))
@@ -250,7 +267,11 @@ def main_worker(gpu, ngpus_per_node, args):
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=(train_sampler is None),
         num_workers=args.workers, pin_memory=True, sampler=train_sampler, drop_last=True)
-
+  
+    if args.train_accfile!="" and args.gpu == 0:
+        with open(args.train_accfile,"w") as f: #清空
+            f.write("")
+          
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
@@ -266,7 +287,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 'arch': args.arch,
                 'state_dict': model.state_dict(),
                 'optimizer' : optimizer.state_dict(),
-            }, is_best=False, filename='checkpoint_{:04d}.pth.tar'.format(epoch))
+            }, is_best=False, filename='simsiam_checkpoint_{:04d}.pth.tar'.format(epoch))
 
 
 def train(train_loader, model, criterion, optimizer, epoch, args):
@@ -295,7 +316,11 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         loss = -(criterion(p1, z2).mean() + criterion(p2, z1).mean()) * 0.5
 
         losses.update(loss.item(), images[0].size(0))
-
+      
+        if args.train_accfile!="" and args.gpu == 0:
+            with open(args.train_accfile,"a") as f:
+                f.write(f"{epoch} {losses.val:.3f}\n")
+              
         # compute gradient and do SGD step
         optimizer.zero_grad()
         loss.backward()

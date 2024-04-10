@@ -142,7 +142,7 @@ def main_worker(gpu, ngpus_per_node, args):
         builtins.print = print_pass
 
     if args.gpu is not None:
-        print("Use GPU: {} for training".format(args.gpu))
+        print("Use GPU: {} for training--".format(args.gpu))
 
     if args.distributed:
         if args.dist_url == "env://" and args.rank == -1:

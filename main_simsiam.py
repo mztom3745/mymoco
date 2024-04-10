@@ -44,7 +44,7 @@ parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet50',
                         ' (default: resnet50)')
 parser.add_argument('-j', '--workers', default=32, type=int, metavar='N',
                     help='number of data loading workers (default: 32)')
-parser.add_argument('--epochs', default=200, type=int, metavar='N',#change to 200
+parser.add_argument('--epochs', default=100, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
@@ -89,11 +89,6 @@ parser.add_argument('--pred-dim', default=512, type=int,
                     help='hidden dimension of the predictor (default: 512)')
 parser.add_argument('--fix-pred-lr', action='store_true',
                     help='Fix learning rate for the predictor')
-#added
-parser.add_argument(
-    "--train_accfile",default="", type=str, help="存放train_acc结果"
-)
-
 
 def main():
     args = parser.parse_args()
@@ -157,15 +152,13 @@ def main_worker(gpu, ngpus_per_node, args):
     model = simsiam.builder.SimSiam(
         models.__dict__[args.arch],
         args.dim, args.pred_dim)
-    print("model created")
-    
+
     # infer learning rate before changing batch size
     init_lr = args.lr * args.batch_size / 256
 
     if args.distributed:
         # Apply SyncBN
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-        print("syncBN done")
         # For multiprocessing distributed, DistributedDataParallel constructor
         # should always set the single device scope, otherwise,
         # DistributedDataParallel will use all available devices.
@@ -244,7 +237,7 @@ def main_worker(gpu, ngpus_per_node, args):
         transforms.ToTensor(),
         normalize
     ]
-    
+
     train_dataset = datasets.ImageFolder(
         traindir,
         simsiam.loader.TwoCropsTransform(transforms.Compose(augmentation)))
@@ -257,11 +250,7 @@ def main_worker(gpu, ngpus_per_node, args):
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=(train_sampler is None),
         num_workers=args.workers, pin_memory=True, sampler=train_sampler, drop_last=True)
-  
-    if args.train_accfile!="" and args.gpu == 0:
-        with open(args.train_accfile,"w") as f: #清空
-            f.write("")
-          
+
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
@@ -277,7 +266,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 'arch': args.arch,
                 'state_dict': model.state_dict(),
                 'optimizer' : optimizer.state_dict(),
-            }, is_best=False, filename='simsiam_checkpoint_{:04d}.pth.tar'.format(epoch))
+            }, is_best=False, filename='checkpoint_{:04d}.pth.tar'.format(epoch))
 
 
 def train(train_loader, model, criterion, optimizer, epoch, args):
@@ -306,11 +295,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         loss = -(criterion(p1, z2).mean() + criterion(p2, z1).mean()) * 0.5
 
         losses.update(loss.item(), images[0].size(0))
-      
-        if args.train_accfile!="" and args.gpu == 0:
-            with open(args.train_accfile,"a") as f:
-                f.write(f"{epoch} {losses.val:.3f}\n")
-              
+
         # compute gradient and do SGD step
         optimizer.zero_grad()
         loss.backward()

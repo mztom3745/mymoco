@@ -587,23 +587,19 @@ def sanity_check(state_dict, pretrained_weights):
     """
     print("=> loading '{}' for sanity check".format(pretrained_weights))
     checkpoint = torch.load(pretrained_weights, map_location="cpu")
-    state_dict_pre = checkpoint["state_dict"]
+    state_dict_pre = checkpoint['state_dict']
 
     for k in list(state_dict.keys()):
         # only ignore fc layer
-        if "fc.weight" in k or "fc.bias" in k:
+        if 'fc.weight' in k or 'fc.bias' in k:
             continue
 
         # name in pretrained model
-        k_pre = (
-            "module.encoder_q." + k[len("module.") :]
-            if k.startswith("module.")
-            else "module.encoder_q." + k
-        )
+        k_pre = 'module.encoder.' + k[len('module.'):] \
+            if k.startswith('module.') else 'module.encoder.' + k
 
-        assert (
-            state_dict[k].cpu() == state_dict_pre[k_pre]
-        ).all(), "{} is changed in linear classifier training.".format(k)
+        assert ((state_dict[k].cpu() == state_dict_pre[k_pre]).all()), \
+            '{} is changed in linear classifier training.'.format(k)
 
     print("=> sanity check passed.")
 

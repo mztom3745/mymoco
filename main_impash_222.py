@@ -367,7 +367,7 @@ def main_worker(gpu, ngpus_per_node, args):
     ]
     
     train_dataset = datasets.ImageFolder(
-        traindir, moco.loader.TwoCropsTransform(transforms.Compose(augmentation1))# 文件夹路径和指定数据增强方法
+        traindir, moco.loader.TwoCropsTransform(transforms.Compose(augmentation))# 文件夹路径和指定数据增强方法
     )
 
     if args.distributed:

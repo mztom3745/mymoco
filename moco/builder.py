@@ -170,8 +170,8 @@ class MoCo(nn.Module):
         
         # dequeue and enqueue
         self._dequeue_and_enqueue(k)# k is NxC(batch_size x Dim)
-        print("logits:",logits)
-        print("labels:",labels)
+        #print("logits:",logits)
+        #print("labels:",labels)
         return logits, labels
 
 

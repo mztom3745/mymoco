@@ -460,7 +460,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         #print(top1.avg)
 
         #added
-        if args.train_accfile!="" and args.gpu == 0:
+        if args.train_accfile!="" and args.gpu == 0 and i % args.print_freq == 0:
             with open(args.train_accfile,"a") as f:
                 f.write(f"{epoch} {top1.val:.3f} {top1.avg:.3f}\n")
 

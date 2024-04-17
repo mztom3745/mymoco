@@ -404,16 +404,17 @@ def main_worker(gpu, ngpus_per_node, args):
             args.multiprocessing_distributed and args.rank % ngpus_per_node == 0 
             # ngpus_per_node为gpu总数，即一轮训练完成后
         ):
-            save_checkpoint(
-                {
-                    "epoch": epoch + 1,
-                    "arch": args.arch,
-                    "state_dict": model.state_dict(),
-                    "optimizer": optimizer.state_dict(),
-                },
-                is_best=False,
-                filename="impashv33_{:04d}.pth.tar".format(epoch),
-            )
+            if epoch % 10 == 9 and epoch >= 9:
+                save_checkpoint(
+                    {
+                        "epoch": epoch + 1,
+                        "arch": args.arch,
+                        "state_dict": model.state_dict(),
+                        "optimizer": optimizer.state_dict(),
+                    },
+                    is_best=False,
+                    filename="impashv33_{:04d}.pth.tar".format(epoch),
+                )
 
 
 def train(train_loader, model, criterion, optimizer, epoch, args):

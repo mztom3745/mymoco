@@ -413,7 +413,7 @@ def main_worker(gpu, ngpus_per_node, args):
             args.multiprocessing_distributed and args.rank % ngpus_per_node == 0 
             # ngpus_per_node为gpu总数，即一轮训练完成后
         ):
-            if epoch % 10 == 9 and epoch >= 9:
+            if epoch % 10 == 9 or epoch == 0:
                 save_checkpoint(
                     {
                         "epoch": epoch + 1,

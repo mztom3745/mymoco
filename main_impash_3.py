@@ -360,7 +360,7 @@ def main_worker(gpu, ngpus_per_node, args):
             normalize,
         ]
     augmentation2 = [
-        transforms.RandomResizedCrop(96, scale=(0.14, 1.0)),
+        transforms.RandomResizedCrop(96, scale=(0.05, 0.14)),
         transforms.RandomApply(
             [transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)], p=0.8  # not strengthened
         ),

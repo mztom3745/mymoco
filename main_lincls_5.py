@@ -162,7 +162,7 @@ parser.add_argument(
 parser.add_argument(
     "--num_classes",default=9, type=int, help="待分类数据集的类别数"
 )
-parser.add_argument("--cos", action="store_true", help="use cosine lr schedule")
+parser.add_argument("--cons", action="store_true", help="use cosine lr schedule")
 
 best_acc1 = 0
 
@@ -654,8 +654,11 @@ class ProgressMeter:
 def adjust_learning_rate(optimizer, epoch, args):
     """Decay the learning rate based on schedule"""
     lr = args.lr
-    if args.cos:  # cosine lr schedule 余弦退火调度策略
-        lr *= 0.5 * (1.0 + math.cos(math.pi * epoch / args.epochs))
+    if args.cons:  # cosine lr schedule 余弦退火调度策略
+      for milestone in args.schedule:
+          lr -= 5 if epoch >= milestone else 0
+      for param_group in optimizer.param_groups:
+          param_group["lr"] = lr
     else:
       for milestone in args.schedule:
           lr *= 0.1 if epoch >= milestone else 1.0

@@ -365,8 +365,8 @@ def main_worker(gpu, ngpus_per_node, args):
         ),
         transforms.RandomGrayscale(p=0.2),
         transforms.RandomApply([impash.loader.GaussianBlur([0.1, 2.0])], p=0.5),
-        transforms.RandomHorizontalFlip(img_size=224, crop_size=64),
-        impash.loader.PatchShuffling(),
+        transforms.RandomHorizontalFlip(),
+        impash.loader.PatchShuffling(img_size=224, crop_size=64),
         transforms.ToTensor(),
         normalize,
     ]

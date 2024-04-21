@@ -662,7 +662,7 @@ def adjust_learning_rate(optimizer, epoch, args):
           param_group["lr"] = lr
     if args.cons2:
       for milestone in args.schedule:
-          lr *= 0.5 if epoch >= milestone else 1.0
+          lr *= 0.3 if epoch >= milestone else 1.0
       for param_group in optimizer.param_groups:
           param_group["lr"] = lr
     else:

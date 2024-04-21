@@ -164,6 +164,7 @@ parser.add_argument(
 )
 parser.add_argument("--cons", action="store_true", help="constant lr decline")
 parser.add_argument("--cons2", action="store_true", help="another lr setting")
+parser.add_argument("--cons3", action="store_true", help="another lr setting")
 
 best_acc1 = 0
 
@@ -663,6 +664,11 @@ def adjust_learning_rate(optimizer, epoch, args):
     if args.cons2:
       for milestone in args.schedule:
           lr *= 0.3 if epoch >= milestone else 1.0
+      for param_group in optimizer.param_groups:
+          param_group["lr"] = lr
+    if args.cons3:
+      for milestone in args.schedule:
+          lr *= 0.2 if epoch >= milestone else 1.0
       for param_group in optimizer.param_groups:
           param_group["lr"] = lr
     else:

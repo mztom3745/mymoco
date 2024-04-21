@@ -163,7 +163,7 @@ parser.add_argument(
     "--num_classes",default=9, type=int, help="待分类数据集的类别数"
 )
 parser.add_argument("--cons", action="store_true", help="constant lr decline")
-parser.add_argument("--cons2", action="store_true", help="another lr setting)
+parser.add_argument("--cons2", action="store_true", help="another lr setting")
 
 best_acc1 = 0
 

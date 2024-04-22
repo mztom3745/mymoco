@@ -185,6 +185,9 @@ parser.add_argument(
 parser.add_argument(
     "--train_output",default="", type=str, help="存放打印结果"
 )
+parser.add_argument(
+    "--imagenet",action="store_true"=, help="使用预训练权重"
+)
 
 def main():
     args = parser.parse_args()
@@ -318,18 +321,29 @@ def main_worker(gpu, ngpus_per_node, args):
                 loc = "cuda:{}".format(args.gpu)
                 checkpoint = torch.load(args.resume, map_location=loc)
             args.start_epoch = checkpoint["epoch"]
-            model.load_state_dict(checkpoint["state_dict"])
+            msg=model.load_state_dict(checkpoint["state_dict"])
             optimizer.load_state_dict(checkpoint["optimizer"])
             print(
                 "=> loaded checkpoint '{}' (epoch {})".format(
                     args.resume, checkpoint["epoch"]
                 )
             )
+            if args.imagenet:
+                print("msg.missing_keys:",set(msg.missing_keys))
         else:
             print("=> no checkpoint found at '{}'".format(args.resume))
-
+    
     cudnn.benchmark = True
-
+    if args.imagenet and args.start_epoch == 200:#使用预训练权重进行微调
+        args.start_epoch=0
+        args.lr=0.05
+        args.epochs=100
+        args.schedule=[60, 80]
+        args.cos=True
+        args.aug_plus=True
+        args.mlp=True
+        
+    
     # Data loading code
     traindir = os.path.join(args.data, "train")
     normalize = transforms.Normalize(
@@ -339,10 +353,10 @@ def main_worker(gpu, ngpus_per_node, args):
         # MoCo v2's aug: similar to SimCLR https://arxiv.org/abs/2002.05709
         augmentation1 = [
             transforms.RandomResizedCrop(224, scale=(0.2, 1.0)),
-            transforms.RandomApply(
-                [transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)], p=0.8  # not strengthened
-            ),
-            transforms.RandomGrayscale(p=0.2),
+            #transforms.RandomApply(
+            #    [transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)], p=0.8  # not strengthened
+            #),
+            #transforms.RandomGrayscale(p=0.2),
             transforms.RandomApply([impash.loader.GaussianBlur([0.1, 2.0])], p=0.5),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
@@ -360,10 +374,10 @@ def main_worker(gpu, ngpus_per_node, args):
         ]
     augmentation2 = [
         transforms.RandomResizedCrop(224, scale=(0.6, 1.0)),
-        transforms.RandomApply(
-            [transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)], p=0.8  # not strengthened
-        ),
-        transforms.RandomGrayscale(p=0.2),
+        #transforms.RandomApply(
+        #    [transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)], p=0.8  # not strengthened
+        #),
+        #transforms.RandomGrayscale(p=0.2),
         transforms.RandomApply([impash.loader.GaussianBlur([0.1, 2.0])], p=0.5),
         transforms.RandomHorizontalFlip(),
         impash.loader.PatchShuffling(img_size=224, crop_size=64),

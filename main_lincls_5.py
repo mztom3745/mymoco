@@ -165,6 +165,7 @@ parser.add_argument(
 parser.add_argument("--cons", action="store_true", help="constant lr decline")
 parser.add_argument("--cons2", action="store_true", help="another lr setting")
 parser.add_argument("--cons3", action="store_true", help="another lr setting")
+parser.add_argument("--cos", action="store_true", help="use cosine lr schedule")
 
 best_acc1 = 0
 
@@ -656,17 +657,19 @@ class ProgressMeter:
 def adjust_learning_rate(optimizer, epoch, args):
     """Decay the learning rate based on schedule"""
     lr = args.lr
-    if args.cons:  # constant
+    if args.cos:  # cosine lr schedule 余弦退火调度策略
+        lr *= 0.5 * (1.0 + math.cos(math.pi * epoch / args.epochs))
+    elif args.cons:  # constant
       for milestone in args.schedule:
           lr -= 5 if epoch >= milestone else 0
       for param_group in optimizer.param_groups:
           param_group["lr"] = lr
-    if args.cons2:
+    elif args.cons2:
       for milestone in args.schedule:
           lr *= 0.3 if epoch >= milestone else 1.0
       for param_group in optimizer.param_groups:
           param_group["lr"] = lr
-    if args.cons3:
+    elif args.cons3:
       for milestone in args.schedule:
           lr *= 0.2 if epoch >= milestone else 1.0
       for param_group in optimizer.param_groups:
